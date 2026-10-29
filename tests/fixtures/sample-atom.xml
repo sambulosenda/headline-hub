@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Atom Outlet</title>
+  <entry>
+    <title>Arsenal beat Spurs 3-1 in north London derby</title>
+    <link href="https://atom.example.org/sport/arsenal-spurs"/>
+    <updated>2026-10-28T18:30:00Z</updated>
+    <summary>A brace from the captain settled it.</summary>
+  </entry>
+</feed>

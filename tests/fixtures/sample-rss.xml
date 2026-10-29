@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>Example Outlet</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Bank of England holds interest rates at 4% amid inflation worries</title>
+      <link>https://example.com/news/boe-rates?utm_source=rss&amp;utm_medium=feed#top</link>
+      <description><![CDATA[<p>The Bank&#39;s committee voted 6&ndash;3 to keep rates on hold.</p>]]></description>
+      <pubDate>Wed, 28 Oct 2026 12:00:00 GMT</pubDate>
+      <media:thumbnail url="https://example.com/img/boe.jpg" width="240" height="135"/>
+    </item>
+    <item>
+      <title>Bank of England holds interest rates at 4% amid inflation worries</title>
+      <link>https://example.com/news/boe-rates</link>
+      <pubDate>Wed, 28 Oct 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>   </title>
+      <link>https://example.com/news/no-title</link>
+    </item>
+    <item>
+      <title>Item from the future</title>
+      <link>https://example.com/news/future</link>
+      <pubDate>Wed, 28 Oct 2099 12:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
