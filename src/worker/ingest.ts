@@ -2,10 +2,11 @@ import { and, eq, gt, inArray, isNull, lt, notInArray, or, sql } from "drizzle-o
 import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
+import { getEmbedder, type Embedder } from "../lib/embeddings";
 import { parseFeed, type FeedItem } from "../lib/feeds";
 import { storyScore } from "../lib/ranking";
 import { isAllowed, USER_AGENT } from "../lib/robots";
-import { findStory, titleTokens, type ClusterCandidate } from "../lib/similarity";
+import { findStory, headline, type ClusterCandidate } from "../lib/similarity";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -92,9 +93,11 @@ export async function storeItems(
   items: FeedItem[],
   candidates: ClusterCandidate[],
   now = new Date(),
-): Promise<Set<number>> {
+  embed: Embedder | null = null,
+): Promise<{ touched: Set<number>; added: number }> {
   const touched = new Set<number>();
-  if (items.length === 0) return touched;
+  let added = 0;
+  if (items.length === 0) return { touched, added };
 
   const existing = await db
     .select({ url: articles.url, storyId: articles.storyId })
@@ -103,6 +106,10 @@ export async function storeItems(
   const known = new Map(existing.map((e) => [e.url, e.storyId]));
   // Topic slugs are config-defined identifiers, so a Postgres array literal is safe here.
   const topicsLiteral = `{${feed.topics.join(",")}}`;
+
+  const fresh = items.filter((i) => !known.has(i.url));
+  const vectors = embed && fresh.length > 0 ? await embedSafely(embed, fresh.map((i) => i.title)) : null;
+  const embeddingOf = new Map(fresh.map((item, i) => [item.url, vectors?.[i] ?? null]));
 
   for (const item of items) {
     if (known.has(item.url)) {
@@ -115,9 +122,10 @@ export async function storeItems(
       continue;
     }
 
-    const tokens = titleTokens(item.title);
+    const embedding = embeddingOf.get(item.url) ?? null;
+    const match = headline(item.title, embedding);
     const publishedAt = item.publishedAt ?? now;
-    let storyId = findStory(tokens, candidates);
+    let storyId = findStory(match, candidates);
     if (storyId === null) {
       const [story] = await db
         .insert(stories)
@@ -136,7 +144,8 @@ export async function storeItems(
         summary: item.summary,
         imageUrl: item.imageUrl,
         topics: feed.topics,
-        tokens,
+        tokens: match.tokens,
+        embedding,
         publishedAt,
       })
       .onConflictDoNothing({ target: articles.url })
@@ -144,10 +153,20 @@ export async function storeItems(
     if (inserted.length === 0) continue;
 
     known.set(item.url, storyId);
-    candidates.push({ storyId, tokens });
+    candidates.push({ ...match, storyId });
     touched.add(storyId);
+    added++;
   }
-  return touched;
+  return { touched, added };
+}
+
+async function embedSafely(embed: Embedder, texts: string[]): Promise<number[][] | null> {
+  try {
+    return await embed(texts);
+  } catch (err) {
+    console.warn("[ingest] embedding failed, falling back to word overlap:", err);
+    return null;
+  }
 }
 
 interface StoryAggregate extends Record<string, unknown> {
@@ -238,10 +257,10 @@ export async function rescoreStories(db: Db, now = new Date()) {
 
 async function loadCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
   const rows = await db
-    .select({ storyId: articles.storyId, tokens: articles.tokens })
+    .select({ storyId: articles.storyId, title: articles.title, embedding: articles.embedding })
     .from(articles)
     .where(gt(articles.publishedAt, new Date(now.getTime() - CLUSTER_WINDOW_MS)));
-  return rows.filter((r): r is ClusterCandidate => r.storyId !== null);
+  return rows.flatMap((r) => (r.storyId === null ? [] : [{ ...headline(r.title, r.embedding), storyId: r.storyId }]));
 }
 
 async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>) {
@@ -266,6 +285,7 @@ export async function runOnce(db: Db) {
       ),
     );
   const candidates = await loadCandidates(db, now);
+  const embed = await getEmbedder();
   let added = 0;
 
   await pool(due, CONCURRENCY, async (feed) => {
@@ -274,9 +294,7 @@ export async function runOnce(db: Db) {
     if (result.kind === "ok") {
       try {
         const items = await parseFeed(result.xml);
-        const before = candidates.length;
-        await storeItems(db, feed, items, candidates);
-        added += candidates.length - before;
+        added += (await storeItems(db, feed, items, candidates, new Date(), embed)).added;
         await db
           .update(feeds)
           .set({ ...base, etag: result.etag, lastModified: result.lastModified, lastStatus: result.status, lastError: null, consecutiveFailures: 0 })
@@ -301,7 +319,9 @@ export async function runOnce(db: Db) {
   });
 
   const rescored = await rescoreStories(db);
-  console.log(`[ingest] feeds=${due.length} new_articles=${added} stories_rescored=${rescored}`);
+  console.log(
+    `[ingest] feeds=${due.length} new_articles=${added} stories_rescored=${rescored} embeddings=${embed ? "on" : "off"}`,
+  );
 }
 
 async function main() {

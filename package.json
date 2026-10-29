@@ -11,9 +11,11 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "ingest": "tsx --env-file-if-exists=.env.local src/worker/ingest.ts",
-    "ingest:watch": "tsx --env-file-if-exists=.env.local src/worker/ingest.ts --watch"
+    "ingest:watch": "tsx --env-file-if-exists=.env.local src/worker/ingest.ts --watch",
+    "recluster": "tsx --env-file-if-exists=.env.local src/worker/recluster.ts"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.2",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.3",
     "postgres": "^4.0.0",
