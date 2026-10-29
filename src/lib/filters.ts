@@ -1,3 +1,4 @@
+import { isRegion } from "@/config/outlets";
 import type { FeedFilters } from "./queries";
 
 export type SearchParams = Record<string, string | string[] | undefined>;
@@ -13,6 +14,7 @@ export const REGION_OPTIONS = [
   { value: "uk", label: "UK" },
   { value: "us", label: "US" },
   { value: "intl", label: "International" },
+  { value: "africa", label: "Africa" },
 ] as const;
 
 function first(v: string | string[] | undefined) {
@@ -25,7 +27,7 @@ export function parseFilters(params: SearchParams, topic?: string): FeedFilters 
   return {
     topic,
     hours: HOUR_OPTIONS.some((o) => o.value === hours) ? hours : 24,
-    region: region === "uk" || region === "us" || region === "intl" ? region : undefined,
+    region: isRegion(region) ? region : undefined,
   };
 }
 

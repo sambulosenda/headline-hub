@@ -1,6 +1,11 @@
 import type { TopicSlug } from "./topics";
 
-export type Region = "uk" | "us" | "intl";
+export const REGIONS = ["uk", "us", "intl", "africa"] as const;
+export type Region = (typeof REGIONS)[number];
+
+export function isRegion(value: unknown): value is Region {
+  return REGIONS.includes(value as Region);
+}
 export type OutletKind = "national" | "broadcaster" | "trade" | "wire" | "specialist";
 
 export interface OutletConfig {

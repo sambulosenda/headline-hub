@@ -42,7 +42,7 @@ Keep the news flowing with `npm run ingest:watch`, which runs the worker every m
 | `npm run dev` / `build` / `start` | Next.js app |
 | `npm run ingest` | One ingest pass |
 | `npm run ingest:watch` | Ingest on a loop |
-| `npm run check-feeds` | Fetch every configured feed once and report broken or stale ones (no DB writes) |
+| `npm run check-feeds` | Fetch every configured feed once and report broken or stale ones (no DB writes). Add URLs after `--` to vet candidate feeds instead |
 | `npm run recluster -- --dry-run` | Backfill embeddings and report how stories would group; add `--threshold=0.65,0.7,0.75` to compare, drop `--dry-run` to apply |
 | `npm run db:generate` | New migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations |

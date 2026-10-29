@@ -8,7 +8,7 @@ export interface FeedFilters {
   topic?: string;
   /** Only stories updated in this many hours. */
   hours: number;
-  region?: "uk" | "us" | "intl";
+  region?: import("@/config/outlets").Region;
   /** Only stories still gaining outlets, ordered by how fast. */
   developing?: boolean;
 }

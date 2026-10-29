@@ -1,3 +1,4 @@
+import { isRegion } from "@/config/outlets";
 import type { ScopeFilters } from "./queries";
 
 /** One Server-Sent Events message. */
@@ -15,7 +16,7 @@ export function parseScope(params: URLSearchParams): { filters: ScopeFilters; si
   return {
     filters: {
       topic: topic && /^[a-z-]{1,32}$/.test(topic) ? topic : undefined,
-      region: region === "uk" || region === "us" || region === "intl" ? region : undefined,
+      region: isRegion(region) ? region : undefined,
     },
     since: Number.isSafeInteger(since) && since >= 0 ? since : 0,
   };
