@@ -11,7 +11,7 @@ export function SiteHeader() {
             Headline<span className="text-accent">Hub</span>
           </Link>
           <SearchBox compact className="ml-auto w-full max-w-56" />
-          <nav className="flex shrink-0 gap-4 text-sm" aria-label="Views">
+          <nav className="flex shrink-0 items-center gap-4 text-sm" aria-label="Views">
             <Link href="/" className="hover:text-accent">
               Top
             </Link>
@@ -20,6 +20,14 @@ export function SiteHeader() {
             </Link>
             <Link href="/developing" className="hidden hover:text-accent sm:inline">
               Developing
+            </Link>
+            <Link href="/settings" aria-label="Customise your feed" title="Customise your feed" className="hover:text-accent">
+              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+                <path d="M3 5h9M15 5h2M3 10h3M9 10h8M3 15h9M15 15h2" strokeLinecap="round" />
+                <circle cx="13.5" cy="5" r="1.5" />
+                <circle cx="7.5" cy="10" r="1.5" />
+                <circle cx="13.5" cy="15" r="1.5" />
+              </svg>
             </Link>
           </nav>
         </div>

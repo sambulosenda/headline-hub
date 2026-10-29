@@ -1,6 +1,7 @@
-import { and, arrayContains, desc, eq, gt, gte, inArray, or, sql } from "drizzle-orm";
+import { and, arrayContains, desc, eq, gt, gte, inArray, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { articles, outlets, stories } from "@/db/schema";
+import { likePattern, type Mutes } from "@/lib/mutes";
 
 export const DEVELOPING_FRESH_HOURS = 3;
 
@@ -11,10 +12,44 @@ export interface FeedFilters {
   region?: "uk" | "us" | "intl";
   /** Only stories still gaining outlets, ordered by how fast. */
   developing?: boolean;
+  /** Sources, topics and keywords the reader has hidden. */
+  mutes?: Mutes;
+}
+
+/** Postgres text[] literal; only ever built from config-validated ids. */
+function textArray(values: string[]) {
+  return `{${values.join(",")}}`;
+}
+
+/** Keyword mutes as "title matches any of these" over a given title column. */
+function titleMatchesAny(title: SQL | typeof articles.title, keywords: string[]): SQL {
+  return sql.join(
+    keywords.map((k) => sql`${title} ilike ${likePattern(k)}`),
+    sql` or `,
+  );
+}
+
+/** Story-level mute conditions: hide muted topics and keywords, and stories only muted outlets cover. */
+function storyMuteConditions(mutes: Mutes | undefined, pageTopic?: string): SQL[] {
+  if (!mutes) return [];
+  const conditions: SQL[] = [];
+  // Visiting a topic page you muted still shows it; muting hides it everywhere else.
+  const topics = mutes.topics.filter((t) => t !== pageTopic);
+  if (topics.length > 0) conditions.push(sql`not (${stories.topics} && ${textArray(topics)}::text[])`);
+  if (mutes.outlets.length > 0) {
+    conditions.push(sql`exists (select 1 from articles ma where ma.story_id = ${stories.id}
+      and ma.outlet_id <> all(${textArray(mutes.outlets)}::text[]))`);
+  }
+  if (mutes.keywords.length > 0) {
+    conditions.push(sql`not exists (select 1 from articles mk where mk.story_id = ${stories.id}
+      and (${titleMatchesAny(sql`mk.title`, mutes.keywords)}))`);
+  }
+  return conditions;
 }
 
 export interface CoverageItem {
   id: number;
+  outletId: string;
   url: string;
   title: string;
   summary: string;
@@ -40,6 +75,7 @@ export interface StoryWithCoverage {
 function coverageSelect() {
   return {
     id: articles.id,
+    outletId: articles.outletId,
     storyId: articles.storyId,
     url: articles.url,
     title: articles.title,
@@ -76,6 +112,8 @@ export async function getTopStories(filters: FeedFilters, limit = 30): Promise<S
     );
   }
 
+  conditions.push(...storyMuteConditions(filters.mutes, filters.topic));
+
   const rows = await db
     .select()
     .from(stories)
@@ -84,19 +122,27 @@ export async function getTopStories(filters: FeedFilters, limit = 30): Promise<S
     .limit(limit);
   if (rows.length === 0) return [];
 
-  const coverage = await loadCoverage(rows.map((r) => r.id));
+  const coverage = await loadCoverage(rows.map((r) => r.id), filters.mutes?.outlets);
   return rows.map((r) => ({ ...r, coverage: coverage.get(r.id) ?? [] }));
 }
 
 /** Every outlet's version of each story, best outlet first. */
-export async function loadCoverage(storyIds: number[]): Promise<Map<number, CoverageItem[]>> {
+export async function loadCoverage(
+  storyIds: number[],
+  mutedOutlets: string[] = [],
+): Promise<Map<number, CoverageItem[]>> {
   const byStory = new Map<number, CoverageItem[]>();
   if (storyIds.length === 0) return byStory;
   const coverage = await getDb()
     .select(coverageSelect())
     .from(articles)
     .innerJoin(outlets, eq(outlets.id, articles.outletId))
-    .where(inArray(articles.storyId, storyIds))
+    .where(
+      and(
+        inArray(articles.storyId, storyIds),
+        mutedOutlets.length > 0 ? notInArray(articles.outletId, mutedOutlets) : undefined,
+      ),
+    )
     .orderBy(desc(outlets.quality), articles.publishedAt);
 
   for (const c of coverage) {
@@ -128,10 +174,17 @@ export async function getLatest(filters: Omit<FeedFilters, "hours">, limit = 60)
 
 export type ScopeFilters = Omit<FeedFilters, "hours">;
 
-function scopeConditions(filters: ScopeFilters) {
-  const conditions = [eq(outlets.active, true)];
+function scopeConditions(filters: ScopeFilters): SQL[] {
+  const conditions: SQL[] = [eq(outlets.active, true)];
   if (filters.topic) conditions.push(arrayContains(articles.topics, [filters.topic]));
   if (filters.region) conditions.push(eq(outlets.region, filters.region));
+  const mutes = filters.mutes;
+  if (mutes) {
+    if (mutes.outlets.length > 0) conditions.push(notInArray(articles.outletId, mutes.outlets));
+    const topics = mutes.topics.filter((t) => t !== filters.topic);
+    if (topics.length > 0) conditions.push(sql`not (${articles.topics} && ${textArray(topics)}::text[])`);
+    if (mutes.keywords.length > 0) conditions.push(sql`not (${titleMatchesAny(articles.title, mutes.keywords)})`);
+  }
   return conditions;
 }
 

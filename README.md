@@ -58,4 +58,4 @@ Before going live: check each publisher's feed terms, keep to headlines, short d
 ## Roadmap
 
 - **Phase 2:** embedding-based clustering (done), live updates (done), Developing view (done), 53 feeds from 33 outlets (done).
-- **Phase 3:** accounts, follows and mutes, saved searches, alerts and digest, publisher feed submissions.
+- **Phase 3:** muting sources, topics and keywords (done, per browser), accounts so preferences follow you, saved stories, alerts and digest, publisher feed submissions.

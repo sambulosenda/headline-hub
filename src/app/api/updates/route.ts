@@ -1,3 +1,4 @@
+import { MUTES_COOKIE, parseMutes } from "@/lib/mutes";
 import { countUpdates } from "@/lib/queries";
 import { parseScope, sseEvent } from "@/lib/sse";
 
@@ -11,7 +12,13 @@ const MAX_STREAM_MS = 4 * 60_000;
  * same whether the ingest worker runs on this machine or elsewhere.
  */
 export async function GET(request: Request) {
-  const { filters, since } = parseScope(new URL(request.url).searchParams);
+  const { filters: scope, since } = parseScope(new URL(request.url).searchParams);
+  const cookie = request.headers
+    .get("cookie")
+    ?.split(/;\s*/)
+    .find((c) => c.startsWith(`${MUTES_COOKIE}=`))
+    ?.slice(MUTES_COOKIE.length + 1);
+  const filters = { ...scope, mutes: parseMutes(cookie ? decodeURIComponent(cookie) : null) };
   const encoder = new TextEncoder();
   const { signal } = request;
 

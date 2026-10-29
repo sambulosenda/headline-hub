@@ -5,6 +5,7 @@ import { StoryCard } from "./StoryCard";
 import { outboundUrl } from "@/lib/normalize";
 import { parseFilters, timeAgo, type SearchParams } from "@/lib/filters";
 import { getLatest, getLatestArticleId, getTopStories } from "@/lib/queries";
+import { getMutes } from "@/lib/mutes-server";
 
 function Notice({ title, body }: { title: string; body: string }) {
   return (
@@ -32,7 +33,7 @@ export async function TopStories({
   developing?: boolean;
 }) {
   const params = await searchParams;
-  const filters = { ...parseFilters(params, topic), developing };
+  const filters = { ...parseFilters(params, topic), developing, mutes: await getMutes() };
   // News must be fresh per request, never baked into the prerendered shell.
   // Called outside the try so its prerender signal isn't swallowed.
   await connection();
@@ -76,7 +77,7 @@ export async function LatestHeadlines({
   topic?: string;
 }) {
   const params = await searchParams;
-  const filters = parseFilters(params, topic);
+  const filters = { ...parseFilters(params, topic), mutes: await getMutes() };
   await connection();
   let items, since;
   try {
