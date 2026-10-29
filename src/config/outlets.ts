@@ -16,6 +16,8 @@ export interface OutletConfig {
   kind: OutletKind;
   /** 0.5 to 1.0. Editorial weight used in ranking; review by hand. */
   quality: number;
+  /** Home country (ISO code from src/config/countries.ts) for national outlets; every story they run counts for it. */
+  country?: string;
   feeds: { url: string; topics: TopicSlug[] }[];
 }
 
@@ -454,6 +456,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Daily Maverick",
     homepage: "https://www.dailymaverick.co.za",
     region: "africa",
+    country: "za",
     kind: "national",
     quality: 0.9,
     feeds: [
@@ -465,6 +468,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "IOL",
     homepage: "https://www.iol.co.za",
     region: "africa",
+    country: "za",
     kind: "national",
     quality: 0.7,
     feeds: [
@@ -476,6 +480,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Moneyweb",
     homepage: "https://www.moneyweb.co.za",
     region: "africa",
+    country: "za",
     kind: "trade",
     quality: 0.8,
     feeds: [
@@ -488,6 +493,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Premium Times",
     homepage: "https://www.premiumtimesng.com",
     region: "africa",
+    country: "ng",
     kind: "national",
     quality: 0.85,
     feeds: [
@@ -499,6 +505,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "The Punch",
     homepage: "https://punchng.com",
     region: "africa",
+    country: "ng",
     kind: "national",
     quality: 0.75,
     feeds: [
@@ -510,6 +517,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Vanguard",
     homepage: "https://www.vanguardngr.com",
     region: "africa",
+    country: "ng",
     kind: "national",
     quality: 0.7,
     feeds: [
@@ -521,6 +529,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Channels Television",
     homepage: "https://www.channelstv.com",
     region: "africa",
+    country: "ng",
     kind: "broadcaster",
     quality: 0.8,
     feeds: [
@@ -532,6 +541,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "BusinessDay",
     homepage: "https://businessday.ng",
     region: "africa",
+    country: "ng",
     kind: "trade",
     quality: 0.8,
     feeds: [
@@ -543,6 +553,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "TechCabal",
     homepage: "https://techcabal.com",
     region: "africa",
+    country: "ng",
     kind: "specialist",
     quality: 0.8,
     feeds: [
@@ -555,6 +566,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Daily Nation",
     homepage: "https://nation.africa/kenya",
     region: "africa",
+    country: "ke",
     kind: "national",
     quality: 0.85,
     feeds: [
@@ -566,6 +578,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "The Standard",
     homepage: "https://www.standardmedia.co.ke",
     region: "africa",
+    country: "ke",
     kind: "national",
     quality: 0.8,
     feeds: [
@@ -577,6 +590,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Capital FM",
     homepage: "https://www.capitalfm.co.ke/news",
     region: "africa",
+    country: "ke",
     kind: "broadcaster",
     quality: 0.75,
     feeds: [
@@ -589,6 +603,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "MyJoyOnline",
     homepage: "https://www.myjoyonline.com",
     region: "africa",
+    country: "gh",
     kind: "broadcaster",
     quality: 0.8,
     feeds: [
@@ -600,6 +615,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Graphic Online",
     homepage: "https://www.graphic.com.gh",
     region: "africa",
+    country: "gh",
     kind: "national",
     quality: 0.8,
     feeds: [
@@ -612,6 +628,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "NewsDay",
     homepage: "https://www.newsday.co.zw",
     region: "africa",
+    country: "zw",
     kind: "national",
     quality: 0.75,
     feeds: [
@@ -623,6 +640,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "The Herald",
     homepage: "https://www.herald.co.zw",
     region: "africa",
+    country: "zw",
     kind: "national",
     quality: 0.65,
     feeds: [
@@ -634,6 +652,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "NewZimbabwe",
     homepage: "https://www.newzimbabwe.com",
     region: "africa",
+    country: "zw",
     kind: "national",
     quality: 0.7,
     feeds: [
@@ -646,6 +665,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "Daily Monitor",
     homepage: "https://www.monitor.co.ug",
     region: "africa",
+    country: "ug",
     kind: "national",
     quality: 0.8,
     feeds: [
@@ -657,6 +677,7 @@ export const OUTLETS: OutletConfig[] = [
     name: "The Citizen",
     homepage: "https://www.thecitizen.co.tz",
     region: "africa",
+    country: "tz",
     kind: "national",
     quality: 0.8,
     feeds: [

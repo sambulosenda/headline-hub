@@ -32,15 +32,17 @@ export async function TopStories({
   pathname,
   searchParams,
   topic,
+  country,
   developing = false,
 }: {
   pathname: string;
   searchParams: Promise<SearchParams>;
   topic?: string;
+  country?: string;
   developing?: boolean;
 }) {
   const params = await searchParams;
-  const filters = { ...parseFilters(params, topic), developing, mutes: await getMutes() };
+  const filters = { ...parseFilters(params, topic), country, developing, mutes: await getMutes() };
   // News must be fresh per request, never baked into the prerendered shell.
   // Called outside the try so its prerender signal isn't swallowed.
   await connection();
@@ -61,6 +63,7 @@ export async function TopStories({
         since={since}
         topic={filters.topic}
         region={filters.region}
+        country={filters.country}
         stories
         mutesKey={mutesKey(filters.mutes)}
       />
@@ -85,13 +88,15 @@ export async function LatestHeadlines({
   pathname,
   searchParams,
   topic,
+  country,
 }: {
   pathname: string;
   searchParams: Promise<SearchParams>;
   topic?: string;
+  country?: string;
 }) {
   const params = await searchParams;
-  const filters = { ...parseFilters(params, topic), mutes: await getMutes() };
+  const filters = { ...parseFilters(params, topic), country, mutes: await getMutes() };
   await connection();
   let items, since;
   try {
@@ -102,7 +107,13 @@ export async function LatestHeadlines({
 
   return (
     <div className="space-y-4">
-      <LiveUpdates since={since} topic={filters.topic} region={filters.region} mutesKey={mutesKey(filters.mutes)} />
+      <LiveUpdates
+        since={since}
+        topic={filters.topic}
+        region={filters.region}
+        country={filters.country}
+        mutesKey={mutesKey(filters.mutes)}
+      />
       <Filters pathname={pathname} params={params} filters={filters} showHours={false} />
       {items.length === 0 ? (
         <Notice title="No headlines yet" body="Run the ingest worker to pull in feeds." />

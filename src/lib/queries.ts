@@ -7,6 +7,8 @@ export const DEVELOPING_FRESH_HOURS = 3;
 
 export interface FeedFilters {
   topic?: string;
+  /** Country code (src/config/countries.ts): stories about that country. */
+  country?: string;
   /** Only stories updated in this many hours. */
   hours: number;
   region?: import("@/config/outlets").Region;
@@ -94,6 +96,7 @@ export async function getTopStories(filters: FeedFilters, limit = 30): Promise<S
   const since = new Date(Date.now() - filters.hours * 3_600_000);
   const conditions = [gt(stories.lastSeenAt, since)];
   if (filters.topic) conditions.push(arrayContains(stories.topics, [filters.topic]));
+  if (filters.country) conditions.push(arrayContains(stories.countries, [filters.country]));
   if (filters.developing) {
     // Two or more outlets joined in the last hour, or a fresh story already
     // picked up by three outlets within three hours of first appearing.
@@ -177,6 +180,7 @@ export type ScopeFilters = Omit<FeedFilters, "hours">;
 function scopeConditions(filters: ScopeFilters): SQL[] {
   const conditions: SQL[] = [eq(outlets.active, true)];
   if (filters.topic) conditions.push(arrayContains(articles.topics, [filters.topic]));
+  if (filters.country) conditions.push(arrayContains(articles.countries, [filters.country]));
   if (filters.region) conditions.push(eq(outlets.region, filters.region));
   const mutes = filters.mutes;
   if (mutes) {

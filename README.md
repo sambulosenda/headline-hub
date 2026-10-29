@@ -43,6 +43,10 @@ Signed-in readers can save stories (bookmark on each card and story page, listed
 
 Signed-in readers can turn on a **daily digest** (top 10 stories, sent from `DIGEST_HOUR`, default 7am server time) and **breaking-news alerts** (a story 5+ outlets cover, with 3+ joining in the last hour, first seen within 3 hours; at most 3 a day) in `/settings`. Both respect the reader's mutes, and every email has a one-click unsubscribe link. Run `npm run notify:watch` alongside `ingest:watch` to send them (every 5 minutes). Without `RESEND_API_KEY` the emails are printed in that terminal instead.
 
+## Countries
+
+Country pages (`/country/zw`, linked from the Africa tab) show stories about one country: everything from that country's own outlets (the `country` field in `src/config/outlets.ts`), plus any article whose headline or summary names it, its capital, big cities or other unambiguous terms (`src/config/countries.ts`). Ingest tags new articles; after changing the country list or terms, or after first adding the migration, run `npm run tag-countries` once to re-tag everything.
+
 ## Scripts
 
 | Script | What it does |

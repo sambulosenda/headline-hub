@@ -43,6 +43,13 @@
       "when": 1793317192673,
       "tag": "0005_email_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793317709222,
+      "tag": "0006_countries",
+      "breakpoints": true
     }
   ]
 }

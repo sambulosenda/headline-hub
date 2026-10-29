@@ -16,12 +16,14 @@ export function LiveUpdates({
   since,
   topic,
   region,
+  country,
   stories = false,
   mutesKey,
 }: {
   since: number;
   topic?: string;
   region?: string;
+  country?: string;
   /** Count whole stories as the story feeds show them, rather than single headlines. */
   stories?: boolean;
   /** Changes when the reader's mutes do, so the stream restarts with the new ones. */
@@ -32,6 +34,7 @@ export function LiveUpdates({
   const params = new URLSearchParams({ since: String(since) });
   if (topic) params.set("topic", topic);
   if (region) params.set("region", region);
+  if (country) params.set("country", country);
   if (stories) params.set("stories", "1");
   if (mutesKey) params.set("m", mutesKey);
   const query = params.toString();
