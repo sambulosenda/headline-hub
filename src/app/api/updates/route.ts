@@ -14,7 +14,9 @@ const MAX_STREAM_MS = 4 * 60_000;
  * same whether the ingest worker runs on this machine or elsewhere.
  */
 export async function GET(request: Request) {
-  const { filters: scope, since } = parseScope(new URL(request.url).searchParams);
+  const url = new URL(request.url);
+  const { filters: scope, since } = parseScope(url.searchParams);
+  const storyLevel = url.searchParams.get("stories") === "1";
   const cookieHeader = request.headers.get("cookie");
   const user = await userForSession(readCookie(cookieHeader, SESSION_COOKIE));
   const mutes = user ? await loadPreferences(user.id) : parseMutes(readCookie(cookieHeader, MUTES_COOKIE));
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
       send("retry: 5000\n\n");
       while (!signal.aborted && Date.now() - started < MAX_STREAM_MS) {
         try {
-          const counts = await countUpdates(filters, since);
+          const counts = await countUpdates(filters, since, storyLevel);
           const key = `${counts.newStories}/${counts.updatedStories}`;
           if (key !== last) {
             send(sseEvent("updates", counts, counts.latestId));

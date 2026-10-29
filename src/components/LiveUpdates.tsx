@@ -12,12 +12,28 @@ function label({ newStories, updatedStories }: UpdateCounts) {
 }
 
 /** Listens for new coverage since this render and offers a one-tap refresh. */
-export function LiveUpdates({ since, topic, region }: { since: number; topic?: string; region?: string }) {
+export function LiveUpdates({
+  since,
+  topic,
+  region,
+  stories = false,
+  mutesKey,
+}: {
+  since: number;
+  topic?: string;
+  region?: string;
+  /** Count whole stories as the story feeds show them, rather than single headlines. */
+  stories?: boolean;
+  /** Changes when the reader's mutes do, so the stream restarts with the new ones. */
+  mutesKey?: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const params = new URLSearchParams({ since: String(since) });
   if (topic) params.set("topic", topic);
   if (region) params.set("region", region);
+  if (stories) params.set("stories", "1");
+  if (mutesKey) params.set("m", mutesKey);
   const query = params.toString();
   // Counts are tagged with the query they answer, so a stale count never shows after a refresh.
   const [latest, setLatest] = useState<{ query: string; counts: UpdateCounts } | null>(null);

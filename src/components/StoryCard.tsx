@@ -7,7 +7,7 @@ import type { StoryWithCoverage } from "@/lib/queries";
 import { findTopic } from "@/config/topics";
 import { toggleOutletMute, toggleTopicMute } from "@/app/settings/actions";
 
-export function StoryCard({ story }: { story: StoryWithCoverage }) {
+export function StoryCard({ story, mutedTopics = [] }: { story: StoryWithCoverage; mutedTopics?: string[] }) {
   const [lead, ...rest] = story.coverage;
   if (!lead) return null;
   const developing = story.recentOutlets >= 2;
@@ -84,7 +84,7 @@ export function StoryCard({ story }: { story: StoryWithCoverage }) {
                 topic && (
                   <form key={slug} action={toggleTopicMute.bind(null, slug)}>
                     <button type="submit" className="rounded-full border border-line px-3 py-1 hover:border-accent">
-                      Mute {topic.name}
+                      {mutedTopics.includes(slug) ? "Unmute" : "Mute"} {topic.name}
                     </button>
                   </form>
                 )

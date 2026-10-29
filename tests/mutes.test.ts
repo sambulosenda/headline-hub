@@ -16,6 +16,11 @@ describe("parseMutes", () => {
     expect(parseMutes(raw)).toEqual({ outlets: ["bbc"], topics: ["football"], keywords: ["love island"] });
   });
 
+  it("keeps at most 30 keywords, in order", () => {
+    const keywords = Array.from({ length: 35 }, (_, i) => `kw${i}`);
+    expect(parseMutes(JSON.stringify({ keywords })).keywords).toEqual(keywords.slice(0, 30));
+  });
+
   it("treats malformed cookies as no mutes", () => {
     expect(parseMutes("{nope")).toEqual(NO_MUTES);
     expect(parseMutes("null")).toEqual(NO_MUTES);
