@@ -140,6 +140,31 @@ export const savedStories = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.storyId] }), index("saved_stories_user_idx").on(t.userId, t.createdAt)],
 );
 
+export const emailSettings = pgTable("email_settings", {
+  userId: integer("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  digest: boolean("digest").notNull().default(false),
+  alerts: boolean("alerts").notNull().default(false),
+  /** Random secret in every email's unsubscribe link; works without signing in. */
+  unsubscribeToken: text("unsubscribe_token").notNull().unique(),
+  lastDigestAt: timestamp("last_digest_at", { withTimezone: true }),
+});
+
+export const alertsSent = pgTable(
+  "alerts_sent",
+  {
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    storyId: integer("story_id")
+      .notNull()
+      .references(() => stories.id, { onDelete: "cascade" }),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.storyId] }), index("alerts_sent_user_idx").on(t.userId, t.sentAt)],
+);
+
 export type Outlet = typeof outlets.$inferSelect;
 export type Article = typeof articles.$inferSelect;
 export type Story = typeof stories.$inferSelect;

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { getDb } from "@/db/client";
 import { loginTokens, sessions, userPreferences, users } from "@/db/schema";
+import { sendEmail } from "./email";
 import { mergeMutes, MUTES_COOKIE, NO_MUTES, parseMutes, serializeMutes, type Mutes } from "./mutes";
 import { siteUrl, SITE_NAME } from "./site";
 import {
@@ -51,24 +52,17 @@ export async function requestSignIn(rawEmail: string): Promise<SignInRequest> {
 }
 
 async function sendLink(email: string, link: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) {
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+    // Kept in this exact form: the README tells people to grep the dev log for it.
     console.log(`[auth] sign-in link for ${email}: ${link}`);
     return;
   }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: email,
-      subject: `Sign in to ${SITE_NAME}`,
-      text: `Sign in to ${SITE_NAME}:\n\n${link}\n\nThe link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.`,
-      html: `<p><a href="${link}">Sign in to ${SITE_NAME}</a></p><p>The link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.</p>`,
-    }),
+  await sendEmail({
+    to: email,
+    subject: `Sign in to ${SITE_NAME}`,
+    text: `Sign in to ${SITE_NAME}:\n\n${link}\n\nThe link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.`,
+    html: `<p><a href="${link}">Sign in to ${SITE_NAME}</a></p><p>The link works once and expires in 15 minutes. If you didn't ask for it, ignore this email.</p>`,
   });
-  if (!res.ok) throw new Error(`Email send failed: ${res.status} ${await res.text()}`);
 }
 
 /**

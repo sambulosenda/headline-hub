@@ -5,6 +5,8 @@ import { TOPICS } from "@/config/topics";
 import Link from "next/link";
 import { signOutAction } from "@/app/signin/actions";
 import { getCurrentUser } from "@/lib/auth";
+import { getEmailChoices } from "@/lib/email-settings";
+import { setAlerts, setDigest } from "./email-actions";
 import { isEmpty, MAX_KEYWORDS } from "@/lib/mutes";
 import { getMutes } from "@/lib/mutes-server";
 import {
@@ -72,6 +74,44 @@ async function Account() {
   );
 }
 
+async function EmailSection() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const choices = await getEmailChoices(user.id);
+  const option = (on: boolean, label: string, hint: string, action: () => Promise<void>) => (
+    <form action={action} className="flex items-start justify-between gap-4 py-2">
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-sm text-muted">{hint}</p>
+      </div>
+      <button
+        type="submit"
+        role="switch"
+        aria-checked={on}
+        aria-label={label}
+        className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full transition ${on ? "bg-accent" : "bg-line"}`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? "left-[18px]" : "left-0.5"}`}
+        />
+      </button>
+    </form>
+  );
+  return (
+    <Section title="Email" hint={`Sent to ${user.email}. Both skip anything you've muted.`}>
+      <div className="divide-y divide-line">
+        {option(choices.digest, "Daily digest", "The day's ten biggest stories, each morning.", setDigest.bind(null, !choices.digest))}
+        {option(
+          choices.alerts,
+          "Breaking-news alerts",
+          "When a story is suddenly everywhere. At most three a day.",
+          setAlerts.bind(null, !choices.alerts),
+        )}
+      </div>
+    </Section>
+  );
+}
+
 async function SettingsForm() {
   const mutes = await getMutes();
   const regions = REGIONS.map((region) => ({
@@ -81,6 +121,7 @@ async function SettingsForm() {
 
   return (
     <div className="space-y-4">
+      <EmailSection />
       <Section title="Topics" hint="Muted topics disappear from Top, Latest and Developing. Their own pages still work.">
         <div className="flex flex-wrap gap-2">
           {TOPICS.map((t) => (
