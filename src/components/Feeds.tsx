@@ -24,13 +24,15 @@ export async function TopStories({
   pathname,
   searchParams,
   topic,
+  developing = false,
 }: {
   pathname: string;
   searchParams: Promise<SearchParams>;
   topic?: string;
+  developing?: boolean;
 }) {
   const params = await searchParams;
-  const filters = parseFilters(params, topic);
+  const filters = { ...parseFilters(params, topic), developing };
   // News must be fresh per request, never baked into the prerendered shell.
   // Called outside the try so its prerender signal isn't swallowed.
   await connection();
@@ -49,7 +51,14 @@ export async function TopStories({
       <LiveUpdates since={since} topic={filters.topic} region={filters.region} />
       <Filters pathname={pathname} params={params} filters={filters} />
       {stories.length === 0 ? (
-        <Notice title="No stories yet" body="Try a longer time window, or run the ingest worker." />
+        <Notice
+          title={developing ? "Nothing developing right now" : "No stories yet"}
+          body={
+            developing
+              ? "Stories show here while outlets are still picking them up. Check back soon."
+              : "Try a longer time window, or run the ingest worker."
+          }
+        />
       ) : (
         stories.map((s) => <StoryCard key={s.id} story={s} />)
       )}
