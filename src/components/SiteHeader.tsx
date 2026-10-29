@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { TOPICS } from "@/config/topics";
+import { SearchBox } from "./SearchBox";
 
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-background/90 backdrop-blur">
       <div className="mx-auto max-w-3xl px-4">
-        <div className="flex h-14 items-center justify-between">
+        <div className="flex h-14 items-center justify-between gap-4">
           <Link href="/" className="text-lg font-bold tracking-tight">
             Headline<span className="text-accent">Hub</span>
           </Link>
-          <nav className="flex gap-4 text-sm" aria-label="Views">
+          <SearchBox compact className="ml-auto w-full max-w-56" />
+          <nav className="flex shrink-0 gap-4 text-sm" aria-label="Views">
             <Link href="/" className="hover:text-accent">
               Top
             </Link>
