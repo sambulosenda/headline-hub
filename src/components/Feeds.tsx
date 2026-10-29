@@ -5,6 +5,13 @@ import { StoryCard } from "./StoryCard";
 import { outboundUrl } from "@/lib/normalize";
 import { parseFilters, timeAgo, type SearchParams } from "@/lib/filters";
 import { getLatest, getLatestArticleId, getTopStories } from "@/lib/queries";
+import { createHash } from "node:crypto";
+import { serializeMutes, type Mutes } from "@/lib/mutes";
+import { getMutes } from "@/lib/mutes-server";
+
+function mutesKey(mutes: Mutes) {
+  return createHash("sha256").update(serializeMutes(mutes)).digest("hex").slice(0, 8);
+}
 
 function Notice({ title, body }: { title: string; body: string }) {
   return (
@@ -32,7 +39,7 @@ export async function TopStories({
   developing?: boolean;
 }) {
   const params = await searchParams;
-  const filters = { ...parseFilters(params, topic), developing };
+  const filters = { ...parseFilters(params, topic), developing, mutes: await getMutes() };
   // News must be fresh per request, never baked into the prerendered shell.
   // Called outside the try so its prerender signal isn't swallowed.
   await connection();
@@ -48,7 +55,13 @@ export async function TopStories({
 
   return (
     <div className="space-y-4">
-      <LiveUpdates since={since} topic={filters.topic} region={filters.region} />
+      <LiveUpdates
+        since={since}
+        topic={filters.topic}
+        region={filters.region}
+        stories
+        mutesKey={mutesKey(filters.mutes)}
+      />
       <Filters pathname={pathname} params={params} filters={filters} />
       {stories.length === 0 ? (
         <Notice
@@ -60,7 +73,7 @@ export async function TopStories({
           }
         />
       ) : (
-        stories.map((s) => <StoryCard key={s.id} story={s} />)
+        stories.map((s) => <StoryCard key={s.id} story={s} mutedTopics={filters.mutes.topics} />)
       )}
     </div>
   );
@@ -76,7 +89,7 @@ export async function LatestHeadlines({
   topic?: string;
 }) {
   const params = await searchParams;
-  const filters = parseFilters(params, topic);
+  const filters = { ...parseFilters(params, topic), mutes: await getMutes() };
   await connection();
   let items, since;
   try {
@@ -87,7 +100,7 @@ export async function LatestHeadlines({
 
   return (
     <div className="space-y-4">
-      <LiveUpdates since={since} topic={filters.topic} region={filters.region} />
+      <LiveUpdates since={since} topic={filters.topic} region={filters.region} mutesKey={mutesKey(filters.mutes)} />
       <Filters pathname={pathname} params={params} filters={filters} showHours={false} />
       {items.length === 0 ? (
         <Notice title="No headlines yet" body="Run the ingest worker to pull in feeds." />

@@ -4,8 +4,10 @@ import Link from "next/link";
 import { timeAgo } from "@/lib/filters";
 import { storyPath } from "@/lib/slug";
 import type { StoryWithCoverage } from "@/lib/queries";
+import { findTopic } from "@/config/topics";
+import { toggleOutletMute, toggleTopicMute } from "@/app/settings/actions";
 
-export function StoryCard({ story }: { story: StoryWithCoverage }) {
+export function StoryCard({ story, mutedTopics = [] }: { story: StoryWithCoverage; mutedTopics?: string[] }) {
   const [lead, ...rest] = story.coverage;
   if (!lead) return null;
   const developing = story.recentOutlets >= 2;
@@ -68,6 +70,28 @@ export function StoryCard({ story }: { story: StoryWithCoverage }) {
             </ul>
           </details>
         )}
+        <details>
+          <summary className="cursor-pointer text-muted">Hide…</summary>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <form action={toggleOutletMute.bind(null, lead.outletId)}>
+              <button type="submit" className="rounded-full border border-line px-3 py-1 hover:border-accent">
+                Mute {lead.outletName}
+              </button>
+            </form>
+            {story.topics.map((slug) => {
+              const topic = findTopic(slug);
+              return (
+                topic && (
+                  <form key={slug} action={toggleTopicMute.bind(null, slug)}>
+                    <button type="submit" className="rounded-full border border-line px-3 py-1 hover:border-accent">
+                      {mutedTopics.includes(slug) ? "Unmute" : "Mute"} {topic.name}
+                    </button>
+                  </form>
+                )
+              );
+            })}
+          </div>
+        </details>
         <details>
           <summary className="cursor-pointer text-muted">Why this is here</summary>
           <ul className="mt-2 list-disc pl-5 text-muted">
