@@ -12,6 +12,7 @@ This is Phase 1 of the plan: feed ingestion, story clustering, a transparent ran
 4. **Cluster** (`src/lib/similarity.ts`, `src/lib/embeddings.ts`): each headline is embedded with a small sentence model (all-MiniLM-L6-v2, run locally, about 23 MB downloaded on first use) and joins the closest story from the last 48 hours when the meaning matches. Shared names, places and numbers guard against look-alike stories ("family pays tribute to man killed in crash"). With `EMBEDDINGS=off`, or if the model can't load, it falls back to word overlap.
 5. **Rank** (`src/lib/ranking.ts`): score = breadth (distinct outlets) × average source quality × freshness (6 h half-life) × velocity (outlets joining in the last hour). No click data. Each card has a "Why this is here" panel built from the same numbers.
 6. **Web app** (`src/app`): Next.js App Router with Cache Components. The page shell is static; the news streams in per request.
+7. **Live updates** (`src/app/api/updates/route.ts`, `src/components/LiveUpdates.tsx`): each page opens a Server-Sent Events stream that checks Postgres every 15 seconds for stories that are new or gained coverage since the page loaded, and shows a "2 new stories" pill that refreshes the feed in place. It polls the database rather than the worker, so it works wherever the worker runs.
 
 ## Getting started
 
@@ -49,5 +50,5 @@ Before going live: check each publisher's feed terms, keep to headlines, short d
 
 ## Roadmap
 
-- **Phase 2:** embedding-based clustering (done), live updates over SSE, Developing view, more sources.
+- **Phase 2:** embedding-based clustering (done), live updates (done), Developing view, more sources.
 - **Phase 3:** accounts, follows and mutes, saved searches, alerts and digest, publisher feed submissions.

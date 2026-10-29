@@ -93,9 +93,7 @@ export interface LatestItem extends CoverageItem {
 /** Newest headlines first, regardless of clustering. */
 export async function getLatest(filters: Omit<FeedFilters, "hours">, limit = 60): Promise<LatestItem[]> {
   const db = getDb();
-  const conditions = [eq(outlets.active, true)];
-  if (filters.topic) conditions.push(arrayContains(articles.topics, [filters.topic]));
-  if (filters.region) conditions.push(eq(outlets.region, filters.region));
+  const conditions = scopeConditions(filters);
 
   return db
     .select({ ...coverageSelect(), storyOutletCount: stories.outletCount })
@@ -105,4 +103,55 @@ export async function getLatest(filters: Omit<FeedFilters, "hours">, limit = 60)
     .where(and(...conditions))
     .orderBy(desc(articles.publishedAt))
     .limit(limit);
+}
+
+export type ScopeFilters = Omit<FeedFilters, "hours">;
+
+function scopeConditions(filters: ScopeFilters) {
+  const conditions = [eq(outlets.active, true)];
+  if (filters.topic) conditions.push(arrayContains(articles.topics, [filters.topic]));
+  if (filters.region) conditions.push(eq(outlets.region, filters.region));
+  return conditions;
+}
+
+/** Newest article id in scope: the marker a page sends back to ask "what's new since I loaded?". */
+export async function getLatestArticleId(filters: ScopeFilters): Promise<number> {
+  const [row] = await getDb()
+    .select({ id: sql<number | null>`max(${articles.id})` })
+    .from(articles)
+    .innerJoin(outlets, eq(outlets.id, articles.outletId))
+    .where(and(...scopeConditions(filters)));
+  return row?.id ?? 0;
+}
+
+export interface UpdateCounts {
+  /** Stories that did not exist when the page loaded. */
+  newStories: number;
+  /** Existing stories that gained coverage since then. */
+  updatedStories: number;
+  latestId: number;
+}
+
+/** What changed in scope since an article id, counted per story. */
+export async function countUpdates(filters: ScopeFilters, sinceId: number): Promise<UpdateCounts> {
+  const db = getDb();
+  const fresh = await db
+    .select({
+      storyId: articles.storyId,
+      maxId: sql<number>`max(${articles.id})`.mapWith(Number),
+      isNew: sql<boolean>`bool_and(not exists (
+        select 1 from articles old where old.story_id = ${articles.storyId} and old.id <= ${sinceId}
+      ))`,
+    })
+    .from(articles)
+    .innerJoin(outlets, eq(outlets.id, articles.outletId))
+    .where(and(gt(articles.id, sinceId), ...scopeConditions(filters)))
+    .groupBy(articles.storyId);
+
+  const newStories = fresh.filter((f) => f.isNew).length;
+  return {
+    newStories,
+    updatedStories: fresh.length - newStories,
+    latestId: Math.max(sinceId, ...fresh.map((f) => f.maxId)),
+  };
 }
