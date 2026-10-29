@@ -1,0 +1,77 @@
+import { explainScore } from "@/lib/ranking";
+import { outboundUrl } from "@/lib/normalize";
+import { timeAgo } from "@/lib/filters";
+import type { StoryWithCoverage } from "@/lib/queries";
+
+export function StoryCard({ story }: { story: StoryWithCoverage }) {
+  const [lead, ...rest] = story.coverage;
+  if (!lead) return null;
+  const developing = story.recentOutlets >= 2;
+
+  return (
+    <article className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+      <div className="flex gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span className="rounded-full bg-accent-soft px-2 py-0.5 font-medium text-accent">
+              {story.outletCount} {story.outletCount === 1 ? "source" : "sources"}
+            </span>
+            {developing && (
+              <span className="rounded-full bg-warn-soft px-2 py-0.5 font-medium text-warn">Developing</span>
+            )}
+            <span>{timeAgo(story.lastSeenAt)}</span>
+          </div>
+          <h2 className="text-lg font-semibold leading-snug text-balance">
+            <a href={outboundUrl(lead.url)} className="hover:underline" target="_blank" rel="noopener">
+              {story.title}
+            </a>
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            {lead.outletName}
+            {lead.summary && <span className="hidden sm:inline"> · {lead.summary}</span>}
+          </p>
+        </div>
+        {lead.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- remote publisher images, sized by the feed
+          <img
+            src={lead.imageUrl}
+            alt=""
+            loading="lazy"
+            className="hidden h-20 w-28 shrink-0 rounded-lg object-cover sm:block"
+          />
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+        {rest.length > 0 && (
+          <details className="group">
+            <summary className="cursor-pointer text-accent">
+              More coverage ({rest.length})
+            </summary>
+            <ul className="mt-2 space-y-2 border-l border-line pl-3">
+              {rest.map((a) => (
+                <li key={a.id}>
+                  <a href={outboundUrl(a.url)} className="hover:underline" target="_blank" rel="noopener">
+                    {a.title}
+                  </a>
+                  <span className="text-muted">
+                    {" "}
+                    · {a.outletName} · {timeAgo(a.publishedAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+        <details>
+          <summary className="cursor-pointer text-muted">Why this is here</summary>
+          <ul className="mt-2 list-disc pl-5 text-muted">
+            {explainScore(story).map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        </details>
+      </div>
+    </article>
+  );
+}
