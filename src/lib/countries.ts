@@ -10,14 +10,8 @@ function escape(term: string) {
   return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/[ -]/g, "[ -]");
 }
 
-/**
- * Countries an article is about: the outlet's home country, plus any country
- * named in its headline or summary.
- */
-export function tagCountries(title: string, summary: string, outletCountry?: string): string[] {
+/** Countries named in an article's headline or summary, sorted. */
+export function tagCountries(title: string, summary: string): string[] {
   const text = `${title} ${summary}`.toLowerCase();
-  const found = new Set<string>();
-  if (outletCountry) found.add(outletCountry);
-  for (const m of matchers) if (m.pattern.test(text)) found.add(m.code);
-  return [...found].sort();
+  return matchers.filter((m) => m.pattern.test(text)).map((m) => m.code).sort();
 }

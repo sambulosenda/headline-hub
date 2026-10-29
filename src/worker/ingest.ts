@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, isNull, lt, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lt, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
@@ -22,7 +22,15 @@ export async function syncConfig(db: Db) {
   const outletIds = OUTLETS.map((o) => o.id);
   const feedUrls = OUTLETS.flatMap((o) => o.feeds.map((f) => f.url));
   for (const o of OUTLETS) {
-    const row = { name: o.name, homepage: o.homepage, region: o.region, kind: o.kind, quality: o.quality, active: true };
+    const row = {
+      name: o.name,
+      homepage: o.homepage,
+      region: o.region,
+      kind: o.kind,
+      quality: o.quality,
+      country: o.country ?? null,
+      active: true,
+    };
     await db.insert(outlets).values({ id: o.id, ...row }).onConflictDoUpdate({ target: outlets.id, set: row });
     for (const f of o.feeds) {
       await db
@@ -107,7 +115,6 @@ export async function storeItems(
   const known = new Map(existing.map((e) => [e.url, e.storyId]));
   // Topic slugs are config-defined identifiers, so a Postgres array literal is safe here.
   const topicsLiteral = `{${feed.topics.join(",")}}`;
-  const outletCountry = OUTLET_COUNTRY.get(feed.outletId);
 
   const fresh = items.filter((i) => !known.has(i.url));
   const vectors = embed && fresh.length > 0 ? await embedSafely(embed, fresh.map((i) => i.title)) : null;
@@ -146,7 +153,7 @@ export async function storeItems(
         summary: item.summary,
         imageUrl: item.imageUrl,
         topics: feed.topics,
-        countries: tagCountries(item.title, item.summary, outletCountry),
+        countries: tagCountries(item.title, item.summary),
         tokens: match.tokens,
         embedding,
         publishedAt,
@@ -172,7 +179,22 @@ async function embedSafely(embed: Embedder, texts: string[]): Promise<number[][]
   }
 }
 
-const OUTLET_COUNTRY = new Map(OUTLETS.flatMap((o) => (o.country ? [[o.id, o.country] as const] : [])));
+/**
+ * A story's countries: every country its headlines name, plus a national
+ * outlet's home country when that country's outlets make up at least half the
+ * story's coverage. So a Herald local story counts for Zimbabwe, but world
+ * news a Zimbabwean paper happens to run does not.
+ */
+export function storyCountries(storyId: SQL) {
+  return sql`coalesce((select array_agg(distinct c order by c) from (
+      select unnest(a.countries) as c from articles a where a.story_id = ${storyId}
+      union
+      select o.country from articles a join outlets o on o.id = a.outlet_id
+      where a.story_id = ${storyId} and o.country is not null
+      group by o.country
+      having count(distinct a.outlet_id) * 2 >= (select count(distinct x.outlet_id) from articles x where x.story_id = ${storyId})
+    ) t), '{}')`;
+}
 
 interface StoryAggregate extends Record<string, unknown> {
   story_id: number;
@@ -220,8 +242,7 @@ export async function rescoreStories(db: Db, now = new Date()) {
            min(p.first_seen) as first_seen,
            max(p.last_seen) as last_seen,
            t.topics,
-           coalesce((select array_agg(distinct c order by c) from articles ac, unnest(ac.countries) c
-                     where ac.story_id = p.story_id), '{}') as countries,
+           ${storyCountries(sql`p.story_id`)} as countries,
            l.id as lead_id,
            l.title as lead_title
     from per_outlet p
