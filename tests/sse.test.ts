@@ -15,6 +15,10 @@ describe("parseScope", () => {
     });
   });
 
+  it("accepts the Africa region", () => {
+    expect(parseScope(new URLSearchParams("region=africa")).filters.region).toBe("africa");
+  });
+
   it("drops anything unexpected", () => {
     expect(parseScope(new URLSearchParams("topic=x;drop&region=mars&since=-4"))).toEqual({
       filters: { topic: undefined, region: undefined },

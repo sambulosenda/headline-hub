@@ -3,6 +3,10 @@
  * Writes nothing to the database. Exits 1 if any feed fails.
  *
  *   npm run check-feeds
+ *
+ * Pass URLs to vet candidate feeds instead of the configured ones:
+ *
+ *   npm run check-feeds -- https://example.com/feed/ https://example.org/rss
  */
 import { OUTLETS } from "../config/outlets";
 import { parseFeed } from "../lib/feeds";
@@ -43,12 +47,16 @@ async function check(outlet: string, url: string): Promise<Result> {
 }
 
 async function main() {
-  const jobs = OUTLETS.flatMap((o) => o.feeds.map((f) => () => check(o.name, f.url)));
+  const candidates = process.argv.slice(2).filter((a) => a.startsWith("http"));
+  const jobs =
+    candidates.length > 0
+      ? candidates.map((url) => () => check(new URL(url).hostname, url))
+      : OUTLETS.flatMap((o) => o.feeds.map((f) => () => check(o.name, f.url)));
   const results: Result[] = [];
   for (let i = 0; i < jobs.length; i += 6) {
     results.push(...(await Promise.all(jobs.slice(i, i + 6).map((j) => j()))));
   }
-  for (const r of results) console.log(`${r.ok ? "ok  " : "FAIL"} ${r.outlet.padEnd(22)} ${r.detail.padEnd(32)} ${r.url}`);
+  for (const r of results) console.log(`${r.ok ? "ok  " : "FAIL"} ${r.outlet.padEnd(26)} ${r.detail.padEnd(32)} ${r.url}`);
   const failed = results.filter((r) => !r.ok).length;
   console.log(`\n${results.length - failed}/${results.length} feeds healthy`);
   if (failed > 0) process.exitCode = 1;

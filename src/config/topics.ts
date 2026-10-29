@@ -1,6 +1,7 @@
 export const TOPICS = [
   { slug: "uk", name: "UK" },
   { slug: "world", name: "World" },
+  { slug: "africa", name: "Africa" },
   { slug: "business", name: "Business" },
   { slug: "tech", name: "Tech" },
   { slug: "science", name: "Science" },

@@ -1,6 +1,11 @@
 import type { TopicSlug } from "./topics";
 
-export type Region = "uk" | "us" | "intl";
+export const REGIONS = ["uk", "us", "intl", "africa"] as const;
+export type Region = (typeof REGIONS)[number];
+
+export function isRegion(value: unknown): value is Region {
+  return REGIONS.includes(value as Region);
+}
 export type OutletKind = "national" | "broadcaster" | "trade" | "wire" | "specialist";
 
 export interface OutletConfig {
@@ -31,10 +36,12 @@ export const OUTLETS: OutletConfig[] = [
       { url: "https://feeds.bbci.co.uk/news/uk/rss.xml", topics: ["uk"] },
       { url: "https://feeds.bbci.co.uk/news/politics/rss.xml", topics: ["uk"] },
       { url: "https://feeds.bbci.co.uk/news/world/rss.xml", topics: ["world"] },
+      { url: "https://feeds.bbci.co.uk/news/world/africa/rss.xml", topics: ["africa"] },
       { url: "https://feeds.bbci.co.uk/news/business/rss.xml", topics: ["business"] },
       { url: "https://feeds.bbci.co.uk/news/technology/rss.xml", topics: ["tech"] },
       { url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml", topics: ["science"] },
       { url: "https://feeds.bbci.co.uk/sport/football/rss.xml", topics: ["football"] },
+      { url: "https://feeds.bbci.co.uk/sport/africa/rss.xml", topics: ["africa", "football"] },
     ],
   },
   {
@@ -47,6 +54,7 @@ export const OUTLETS: OutletConfig[] = [
     feeds: [
       { url: "https://www.theguardian.com/uk-news/rss", topics: ["uk"] },
       { url: "https://www.theguardian.com/world/rss", topics: ["world"] },
+      { url: "https://www.theguardian.com/world/africa/rss", topics: ["africa"] },
       { url: "https://www.theguardian.com/uk/business/rss", topics: ["business"] },
       { url: "https://www.theguardian.com/uk/technology/rss", topics: ["tech"] },
       { url: "https://www.theguardian.com/science/rss", topics: ["science"] },
@@ -347,6 +355,7 @@ export const OUTLETS: OutletConfig[] = [
     quality: 0.9,
     feeds: [
       { url: "https://rss.dw.com/rdf/rss-en-all", topics: ["world"] },
+      { url: "https://rss.dw.com/rdf/rss-en-africa", topics: ["africa"] },
     ],
   },
   {
@@ -358,6 +367,7 @@ export const OUTLETS: OutletConfig[] = [
     quality: 0.85,
     feeds: [
       { url: "https://www.france24.com/en/rss", topics: ["world"] },
+      { url: "https://www.france24.com/en/africa/rss", topics: ["africa"] },
     ],
   },
   {
@@ -391,6 +401,266 @@ export const OUTLETS: OutletConfig[] = [
     quality: 0.85,
     feeds: [
       { url: "https://abcnews.go.com/abcnews/topstories", topics: ["world"] },
+    ],
+  },
+  // Africa: Pan-African
+  {
+    id: "allafrica",
+    name: "AllAfrica",
+    homepage: "https://allafrica.com",
+    region: "africa",
+    kind: "wire",
+    quality: 0.75,
+    feeds: [
+      { url: "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "the-africa-report",
+    name: "The Africa Report",
+    homepage: "https://www.theafricareport.com",
+    region: "africa",
+    kind: "specialist",
+    quality: 0.85,
+    feeds: [
+      { url: "https://www.theafricareport.com/feed/", topics: ["africa", "business"] },
+    ],
+  },
+  {
+    id: "the-east-african",
+    name: "The EastAfrican",
+    homepage: "https://www.theeastafrican.co.ke",
+    region: "africa",
+    kind: "national",
+    quality: 0.85,
+    feeds: [
+      { url: "https://www.theeastafrican.co.ke/rss.xml", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "african-arguments",
+    name: "African Arguments",
+    homepage: "https://africanarguments.org",
+    region: "africa",
+    kind: "specialist",
+    quality: 0.8,
+    feeds: [
+      { url: "https://africanarguments.org/feed/", topics: ["africa"] },
+    ],
+  },
+  // Africa: South Africa
+  {
+    id: "daily-maverick",
+    name: "Daily Maverick",
+    homepage: "https://www.dailymaverick.co.za",
+    region: "africa",
+    kind: "national",
+    quality: 0.9,
+    feeds: [
+      { url: "https://www.dailymaverick.co.za/dmrss/", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "iol",
+    name: "IOL",
+    homepage: "https://www.iol.co.za",
+    region: "africa",
+    kind: "national",
+    quality: 0.7,
+    feeds: [
+      { url: "https://www.iol.co.za/rss", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "moneyweb",
+    name: "Moneyweb",
+    homepage: "https://www.moneyweb.co.za",
+    region: "africa",
+    kind: "trade",
+    quality: 0.8,
+    feeds: [
+      { url: "https://www.moneyweb.co.za/feed/", topics: ["africa", "business"] },
+    ],
+  },
+  // Africa: Nigeria
+  {
+    id: "premium-times",
+    name: "Premium Times",
+    homepage: "https://www.premiumtimesng.com",
+    region: "africa",
+    kind: "national",
+    quality: 0.85,
+    feeds: [
+      { url: "https://www.premiumtimesng.com/feed", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "punch",
+    name: "The Punch",
+    homepage: "https://punchng.com",
+    region: "africa",
+    kind: "national",
+    quality: 0.75,
+    feeds: [
+      { url: "https://punchng.com/feed/", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "vanguard",
+    name: "Vanguard",
+    homepage: "https://www.vanguardngr.com",
+    region: "africa",
+    kind: "national",
+    quality: 0.7,
+    feeds: [
+      { url: "https://www.vanguardngr.com/feed/", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "channels-tv",
+    name: "Channels Television",
+    homepage: "https://www.channelstv.com",
+    region: "africa",
+    kind: "broadcaster",
+    quality: 0.8,
+    feeds: [
+      { url: "https://www.channelstv.com/feed/", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "businessday-ng",
+    name: "BusinessDay",
+    homepage: "https://businessday.ng",
+    region: "africa",
+    kind: "trade",
+    quality: 0.8,
+    feeds: [
+      { url: "https://businessday.ng/feed/", topics: ["africa", "business"] },
+    ],
+  },
+  {
+    id: "techcabal",
+    name: "TechCabal",
+    homepage: "https://techcabal.com",
+    region: "africa",
+    kind: "specialist",
+    quality: 0.8,
+    feeds: [
+      { url: "https://techcabal.com/feed/", topics: ["africa", "tech"] },
+    ],
+  },
+  // Africa: Kenya
+  {
+    id: "nation-kenya",
+    name: "Daily Nation",
+    homepage: "https://nation.africa/kenya",
+    region: "africa",
+    kind: "national",
+    quality: 0.85,
+    feeds: [
+      { url: "https://nation.africa/kenya/rss.xml", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "standard-kenya",
+    name: "The Standard",
+    homepage: "https://www.standardmedia.co.ke",
+    region: "africa",
+    kind: "national",
+    quality: 0.8,
+    feeds: [
+      { url: "https://www.standardmedia.co.ke/rss/headlines.php", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "capital-fm-kenya",
+    name: "Capital FM",
+    homepage: "https://www.capitalfm.co.ke/news",
+    region: "africa",
+    kind: "broadcaster",
+    quality: 0.75,
+    feeds: [
+      { url: "https://www.capitalfm.co.ke/news/feed/", topics: ["africa"] },
+    ],
+  },
+  // Africa: Ghana
+  {
+    id: "myjoyonline",
+    name: "MyJoyOnline",
+    homepage: "https://www.myjoyonline.com",
+    region: "africa",
+    kind: "broadcaster",
+    quality: 0.8,
+    feeds: [
+      { url: "https://www.myjoyonline.com/feed/", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "graphic-ghana",
+    name: "Graphic Online",
+    homepage: "https://www.graphic.com.gh",
+    region: "africa",
+    kind: "national",
+    quality: 0.8,
+    feeds: [
+      { url: "https://www.graphic.com.gh/news.feed?type=rss", topics: ["africa"] },
+    ],
+  },
+  // Africa: Zimbabwe
+  {
+    id: "newsday-zw",
+    name: "NewsDay",
+    homepage: "https://www.newsday.co.zw",
+    region: "africa",
+    kind: "national",
+    quality: 0.75,
+    feeds: [
+      { url: "https://www.newsday.co.zw/feed", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "herald-zw",
+    name: "The Herald",
+    homepage: "https://www.herald.co.zw",
+    region: "africa",
+    kind: "national",
+    quality: 0.65,
+    feeds: [
+      { url: "https://www.herald.co.zw/feed/", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "new-zimbabwe",
+    name: "NewZimbabwe",
+    homepage: "https://www.newzimbabwe.com",
+    region: "africa",
+    kind: "national",
+    quality: 0.7,
+    feeds: [
+      { url: "https://www.newzimbabwe.com/feed/", topics: ["africa"] },
+    ],
+  },
+  // Africa: Uganda and Tanzania
+  {
+    id: "daily-monitor",
+    name: "Daily Monitor",
+    homepage: "https://www.monitor.co.ug",
+    region: "africa",
+    kind: "national",
+    quality: 0.8,
+    feeds: [
+      { url: "https://www.monitor.co.ug/rss.xml", topics: ["africa"] },
+    ],
+  },
+  {
+    id: "the-citizen-tz",
+    name: "The Citizen",
+    homepage: "https://www.thecitizen.co.tz",
+    region: "africa",
+    kind: "national",
+    quality: 0.8,
+    feeds: [
+      { url: "https://www.thecitizen.co.tz/rss.xml", topics: ["africa"] },
     ],
   },
 ];
