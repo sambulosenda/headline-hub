@@ -12,13 +12,21 @@ const MAX_STREAM_MS = 4 * 60_000;
  * same whether the ingest worker runs on this machine or elsewhere.
  */
 export async function GET(request: Request) {
-  const { filters: scope, since } = parseScope(new URL(request.url).searchParams);
+  const url = new URL(request.url);
+  const { filters: scope, since } = parseScope(url.searchParams);
+  const storyLevel = url.searchParams.get("stories") === "1";
   const cookie = request.headers
     .get("cookie")
     ?.split(/;\s*/)
     .find((c) => c.startsWith(`${MUTES_COOKIE}=`))
     ?.slice(MUTES_COOKIE.length + 1);
-  const filters = { ...scope, mutes: parseMutes(cookie ? decodeURIComponent(cookie) : null) };
+  let raw: string | null = null;
+  try {
+    raw = cookie ? decodeURIComponent(cookie) : null;
+  } catch {
+    // Malformed encoding: treat like any other bad cookie, as no mutes.
+  }
+  const filters = { ...scope, mutes: parseMutes(raw) };
   const encoder = new TextEncoder();
   const { signal } = request;
 
@@ -30,7 +38,7 @@ export async function GET(request: Request) {
       send("retry: 5000\n\n");
       while (!signal.aborted && Date.now() - started < MAX_STREAM_MS) {
         try {
-          const counts = await countUpdates(filters, since);
+          const counts = await countUpdates(filters, since, storyLevel);
           const key = `${counts.newStories}/${counts.updatedStories}`;
           if (key !== last) {
             send(sseEvent("updates", counts, counts.latestId));

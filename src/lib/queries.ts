@@ -206,8 +206,11 @@ export interface UpdateCounts {
   latestId: number;
 }
 
-/** What changed in scope since an article id, counted per story. */
-export async function countUpdates(filters: ScopeFilters, sinceId: number): Promise<UpdateCounts> {
+/**
+ * What changed in scope since an article id, counted per story. With storyLevel,
+ * stories the story feeds hide (by topic, keyword or outlet mutes) aren't counted.
+ */
+export async function countUpdates(filters: ScopeFilters, sinceId: number, storyLevel = false): Promise<UpdateCounts> {
   const db = getDb();
   const fresh = await db
     .select({
@@ -219,7 +222,14 @@ export async function countUpdates(filters: ScopeFilters, sinceId: number): Prom
     })
     .from(articles)
     .innerJoin(outlets, eq(outlets.id, articles.outletId))
-    .where(and(gt(articles.id, sinceId), ...scopeConditions(filters)))
+    .innerJoin(stories, eq(stories.id, articles.storyId))
+    .where(
+      and(
+        gt(articles.id, sinceId),
+        ...scopeConditions(filters),
+        ...(storyLevel ? storyMuteConditions(filters.mutes, filters.topic) : []),
+      ),
+    )
     .groupBy(articles.storyId);
 
   const newStories = fresh.filter((f) => f.isNew).length;
