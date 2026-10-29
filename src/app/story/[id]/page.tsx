@@ -4,11 +4,13 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { FeedSkeleton } from "@/components/Feeds";
+import { SaveButton } from "@/components/SaveButton";
 import { ShareButtons } from "@/components/ShareButtons";
 import { findTopic } from "@/config/topics";
 import { timeAgo } from "@/lib/filters";
 import { outboundUrl } from "@/lib/normalize";
 import { explainScore } from "@/lib/ranking";
+import { savedByCurrentUser } from "@/lib/saved";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import { parseStoryId, storyPath } from "@/lib/slug";
 import { coverageLine, getStory, outletNames } from "@/lib/story";
@@ -49,9 +51,10 @@ async function StoryView({ params }: PageProps<"/story/[id]">) {
   const id = parseStoryId((await params).id);
   // Relative times are per request; the story data itself stays cached.
   await connection();
-  let story;
+  let story, saved;
   try {
     story = id ? await getStory(id) : null;
+    saved = story ? (await savedByCurrentUser([story.id])).has(story.id) : false;
   } catch (err) {
     console.error(err);
     return (
@@ -82,8 +85,9 @@ async function StoryView({ params }: PageProps<"/story/[id]">) {
       </div>
       <h1 className="text-2xl font-bold leading-tight text-balance sm:text-3xl">{story.title}</h1>
       <p className="mt-2 text-muted">{coverageLine(names)}</p>
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap items-center gap-4">
         <ShareButtons url={url} title={story.title} />
+        <SaveButton storyId={story.id} saved={!!saved} />
       </div>
 
       <h2 className="mt-8 mb-3 text-sm font-semibold uppercase tracking-wide text-muted">

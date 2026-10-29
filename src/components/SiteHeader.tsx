@@ -21,6 +21,11 @@ export function SiteHeader() {
             <Link href="/developing" className="hidden hover:text-accent sm:inline">
               Developing
             </Link>
+            <Link href="/saved" aria-label="Saved stories" title="Saved stories" className="hover:text-accent">
+              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+                <path d="M5.5 3.5h9v13l-4.5-3-4.5 3z" strokeLinejoin="round" />
+              </svg>
+            </Link>
             <Link href="/settings" aria-label="Customise your feed" title="Customise your feed" className="hover:text-accent">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                 <path d="M3 5h9M15 5h2M3 10h3M9 10h8M3 15h9M15 15h2" strokeLinecap="round" />

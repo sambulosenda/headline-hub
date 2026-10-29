@@ -8,6 +8,7 @@ import { getLatest, getLatestArticleId, getTopStories } from "@/lib/queries";
 import { createHash } from "node:crypto";
 import { serializeMutes, type Mutes } from "@/lib/mutes";
 import { getMutes } from "@/lib/mutes-server";
+import { savedByCurrentUser } from "@/lib/saved";
 
 function mutesKey(mutes: Mutes) {
   return createHash("sha256").update(serializeMutes(mutes)).digest("hex").slice(0, 8);
@@ -43,12 +44,13 @@ export async function TopStories({
   // News must be fresh per request, never baked into the prerendered shell.
   // Called outside the try so its prerender signal isn't swallowed.
   await connection();
-  let stories, since;
+  let stories, since, saved;
   try {
     [stories, since] = await Promise.all([
       getTopStories(filters).then((all) => all.filter((s) => s.coverage.length > 0)),
       getLatestArticleId(filters),
     ]);
+    saved = await savedByCurrentUser(stories.map((s) => s.id));
   } catch (err) {
     return loadError(err);
   }
@@ -73,7 +75,7 @@ export async function TopStories({
           }
         />
       ) : (
-        stories.map((s) => <StoryCard key={s.id} story={s} mutedTopics={filters.mutes.topics} />)
+        stories.map((s) => <StoryCard key={s.id} story={s} mutedTopics={filters.mutes.topics} saved={saved.has(s.id)} />)
       )}
     </div>
   );

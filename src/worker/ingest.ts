@@ -250,6 +250,13 @@ export async function rescoreStories(db: Db, now = new Date()) {
       })
       .where(eq(stories.id, r.story_id));
   }
+  // Saves on a story that reclustering emptied follow its lead article to the story it joined.
+  await db.execute(sql`insert into saved_stories (user_id, story_id, article_id, created_at)
+    select ss.user_id, a.story_id, ss.article_id, ss.created_at
+    from saved_stories ss join articles a on a.id = ss.article_id
+    where a.story_id is not null and a.story_id <> ss.story_id
+      and not exists (select 1 from articles x where x.story_id = ss.story_id)
+    on conflict do nothing`);
   // A story can be created and then lose its article to a concurrent insert of the same URL.
   await db.execute(sql`delete from stories s where not exists (select 1 from articles a where a.story_id = s.id)`);
   return rows.length;
