@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { OUTLETS, type Region } from "@/config/outlets";
+import { OUTLETS, REGIONS, type Region } from "@/config/outlets";
 import { TOPICS } from "@/config/topics";
 import Link from "next/link";
 import { signOutAction } from "@/app/signin/actions";
@@ -17,7 +17,7 @@ import {
 
 export const metadata: Metadata = { title: "Customise your feed" };
 
-const REGION_NAMES: Record<Region, string> = { uk: "UK", us: "US", intl: "International" };
+const REGION_NAMES: Record<Region, string> = { uk: "UK", us: "US", africa: "Africa", intl: "International" };
 
 function Toggle({ muted, label, action }: { muted: boolean; label: string; action: () => Promise<void> }) {
   return (
@@ -74,7 +74,7 @@ async function Account() {
 
 async function SettingsForm() {
   const mutes = await getMutes();
-  const regions = (["uk", "us", "intl"] as const).map((region) => ({
+  const regions = REGIONS.map((region) => ({
     region,
     outlets: OUTLETS.filter((o) => o.region === region).sort((a, b) => a.name.localeCompare(b.name)),
   }));
