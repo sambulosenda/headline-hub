@@ -13,6 +13,8 @@
     "ingest": "tsx --env-file-if-exists=.env.local src/worker/ingest.ts",
     "ingest:watch": "tsx --env-file-if-exists=.env.local src/worker/ingest.ts --watch",
     "recluster": "tsx --env-file-if-exists=.env.local src/worker/recluster.ts",
+    "notify": "tsx --env-file-if-exists=.env.local src/worker/notify.ts",
+    "notify:watch": "tsx --env-file-if-exists=.env.local src/worker/notify.ts --watch",
     "check-feeds": "tsx src/worker/check-feeds.ts"
   },
   "dependencies": {

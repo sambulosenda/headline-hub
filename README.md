@@ -41,6 +41,8 @@ Sign-in is by emailed link, no passwords. Without `RESEND_API_KEY` and `EMAIL_FR
 
 Signed-in readers can save stories (bookmark on each card and story page, listed at `/saved`). If reclustering merges a saved story into another, the save follows its lead article to the new story.
 
+Signed-in readers can turn on a **daily digest** (top 10 stories, sent from `DIGEST_HOUR`, default 7am server time) and **breaking-news alerts** (a story 5+ outlets cover, with 3+ joining in the last hour, first seen within 3 hours; at most 3 a day) in `/settings`. Both respect the reader's mutes, and every email has a one-click unsubscribe link. Run `npm run notify:watch` alongside `ingest:watch` to send them (every 5 minutes). Without `RESEND_API_KEY` the emails are printed in that terminal instead.
+
 ## Scripts
 
 | Script | What it does |
@@ -64,4 +66,4 @@ Before going live: check each publisher's feed terms, keep to headlines, short d
 ## Roadmap
 
 - **Phase 2:** embedding-based clustering (done), live updates (done), Developing view (done), 53 feeds from 33 outlets (done).
-- **Phase 3:** muting sources, topics and keywords (done), email-link sign-in so mutes follow you (done), saved stories (done), alerts and digest, publisher feed submissions.
+- **Phase 3:** muting sources, topics and keywords (done), email-link sign-in so mutes follow you (done), saved stories (done), alerts and digest (done, by email), publisher feed submissions.
