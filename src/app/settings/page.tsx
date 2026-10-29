@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { OUTLETS, type Region } from "@/config/outlets";
 import { TOPICS } from "@/config/topics";
+import Link from "next/link";
+import { signOutAction } from "@/app/signin/actions";
+import { getCurrentUser } from "@/lib/auth";
 import { isEmpty, MAX_KEYWORDS } from "@/lib/mutes";
 import { getMutes } from "@/lib/mutes-server";
 import {
@@ -39,6 +42,33 @@ function Section({ title, hint, children }: { title: string; hint: string; child
       <p className="mb-3 text-sm text-muted">{hint}</p>
       {children}
     </section>
+  );
+}
+
+async function Account() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return (
+      <p className="mb-4 mt-1 text-sm text-muted">
+        Tap to mute or unmute. Choices are saved in this browser.{" "}
+        <Link href="/signin" className="text-accent hover:underline">
+          Sign in
+        </Link>{" "}
+        to keep them on every device.
+      </p>
+    );
+  }
+  return (
+    <div className="mb-4 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+      <span>
+        Tap to mute or unmute. Saved to <strong className="text-foreground">{user.email}</strong>.
+      </span>
+      <form action={signOutAction}>
+        <button type="submit" className="underline hover:text-foreground">
+          Sign out
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -141,9 +171,9 @@ export default function SettingsPage() {
   return (
     <>
       <h1 className="text-2xl font-bold">Customise your feed</h1>
-      <p className="mb-4 mt-1 text-sm text-muted">
-        Tap to mute or unmute. Choices are saved in this browser; signing in will keep them across devices.
-      </p>
+      <Suspense fallback={<p className="mb-4 mt-1 h-5" />}>
+        <Account />
+      </Suspense>
       <Suspense fallback={<div className="h-64 animate-pulse rounded-xl border border-line bg-surface" />}>
         <SettingsForm />
       </Suspense>
