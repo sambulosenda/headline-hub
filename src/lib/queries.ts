@@ -180,7 +180,11 @@ export type ScopeFilters = Omit<FeedFilters, "hours">;
 function scopeConditions(filters: ScopeFilters): SQL[] {
   const conditions: SQL[] = [eq(outlets.active, true)];
   if (filters.topic) conditions.push(arrayContains(articles.topics, [filters.topic]));
-  if (filters.country) conditions.push(arrayContains(articles.countries, [filters.country]));
+  // Story-level, so Latest agrees with Top about which stories belong to a country.
+  if (filters.country) {
+    conditions.push(sql`exists (select 1 from stories cs where cs.id = ${articles.storyId}
+      and cs.countries @> ${`{${filters.country}}`}::text[])`);
+  }
   if (filters.region) conditions.push(eq(outlets.region, filters.region));
   const mutes = filters.mutes;
   if (mutes) {

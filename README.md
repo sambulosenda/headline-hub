@@ -45,7 +45,7 @@ Signed-in readers can turn on a **daily digest** (top 10 stories, sent from `DIG
 
 ## Countries
 
-Country pages (`/country/zw`, linked from the Africa tab) show stories about one country: everything from that country's own outlets (the `country` field in `src/config/outlets.ts`), plus any article whose headline or summary names it, its capital, big cities or other unambiguous terms (`src/config/countries.ts`). Ingest tags new articles; after changing the country list or terms, or after first adding the migration, run `npm run tag-countries` once to re-tag everything.
+Country pages (`/country/zw`, linked from the Africa tab) show stories about one country: local stories from that country's own outlets (the `country` field in `src/config/outlets.ts`; a story counts when those outlets make up at least half its coverage, so world news they also run does not), plus any article whose headline or summary names it, its capital, big cities or other unambiguous terms (`src/config/countries.ts`). Ingest tags new articles; after changing the country list or terms, or after first adding the migration, run `npm run tag-countries` once to re-tag everything.
 
 ## Scripts
 

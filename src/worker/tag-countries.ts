@@ -1,8 +1,8 @@
 import { asc, eq, gt, sql } from "drizzle-orm";
-import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles } from "../db/schema";
 import { tagCountries } from "../lib/countries";
+import { storyCountries, syncConfig } from "./ingest";
 
 /**
  * Re-tags every article with the countries it's about, then rolls them up to
@@ -11,19 +11,20 @@ import { tagCountries } from "../lib/countries";
  */
 async function main() {
   const db = getDb();
-  const outletCountry = new Map(OUTLETS.map((o) => [o.id, o.country]));
+  // Outlet home countries come from the outlets table, so bring it up to date first.
+  await syncConfig(db);
   let lastId = 0;
   let changed = 0;
   for (;;) {
     const batch = await db
-      .select({ id: articles.id, outletId: articles.outletId, title: articles.title, summary: articles.summary, countries: articles.countries })
+      .select({ id: articles.id, title: articles.title, summary: articles.summary, countries: articles.countries })
       .from(articles)
       .where(gt(articles.id, lastId))
       .orderBy(asc(articles.id))
       .limit(1000);
     if (batch.length === 0) break;
     for (const a of batch) {
-      const countries = tagCountries(a.title, a.summary, outletCountry.get(a.outletId));
+      const countries = tagCountries(a.title, a.summary);
       if (countries.join() !== a.countries.join()) {
         await db.update(articles).set({ countries }).where(eq(articles.id, a.id));
         changed++;
@@ -31,9 +32,7 @@ async function main() {
     }
     lastId = batch[batch.length - 1].id;
   }
-  await db.execute(sql`
-    update stories s set countries = coalesce(
-      (select array_agg(distinct c order by c) from articles a, unnest(a.countries) c where a.story_id = s.id), '{}')`);
+  await db.execute(sql`update stories s set countries = ${storyCountries(sql`s.id`)}`);
   console.log(`[tag-countries] articles_changed=${changed}`);
   await closeDb();
 }

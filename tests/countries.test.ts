@@ -4,8 +4,8 @@ import { OUTLETS } from "@/config/outlets";
 import { tagCountries } from "@/lib/countries";
 
 describe("tagCountries", () => {
-  it("counts every story from a national outlet for its country", () => {
-    expect(tagCountries("Council approves new budget", "", "zw")).toEqual(["zw"]);
+  it("tags only what the text names; the outlet's country is added per story", () => {
+    expect(tagCountries("Council approves new budget", "")).toEqual([]);
   });
 
   it("finds countries named in the headline or summary", () => {
@@ -21,7 +21,7 @@ describe("tagCountries", () => {
   });
 
   it("is case-insensitive and sorted", () => {
-    expect(tagCountries("KENYA and UGANDA sign deal", "", "tz")).toEqual(["ke", "tz", "ug"]);
+    expect(tagCountries("UGANDA and KENYA sign deal", "")).toEqual(["ke", "ug"]);
   });
 });
 

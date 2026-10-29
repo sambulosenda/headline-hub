@@ -19,6 +19,8 @@ export const outlets = pgTable("outlets", {
   region: text("region").notNull(),
   kind: text("kind").notNull(),
   quality: real("quality").notNull(),
+  /** Home country code for national outlets (src/config/countries.ts). */
+  country: text("country"),
   active: boolean("active").notNull().default(true),
 });
 
@@ -72,7 +74,7 @@ export const articles = pgTable(
     summary: text("summary").notNull().default(""),
     imageUrl: text("image_url"),
     topics: text("topics").array().notNull(),
-    /** Country codes the article is about (src/lib/countries.ts). */
+    /** Countries the headline or summary names (src/lib/countries.ts); the outlet's own country is added per story. */
     countries: text("countries").array().notNull().default([]),
     tokens: text("tokens").array().notNull(),
     /** Unit-length headline embedding; null when embeddings were off. */
