@@ -18,9 +18,19 @@ export function SiteHeader() {
             <Link href="/latest" className="hover:text-accent">
               Latest
             </Link>
+            <Link href="/developing" className="hidden hover:text-accent sm:inline">
+              Developing
+            </Link>
           </nav>
         </div>
         <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-2 text-sm" aria-label="Topics">
+          {/* No room for this beside the search box on phones, so it leads the topic row there. */}
+          <Link
+            href="/developing"
+            className="shrink-0 rounded-md px-2.5 py-1 font-medium text-warn hover:bg-surface sm:hidden"
+          >
+            Developing
+          </Link>
           {TOPICS.map((t) => (
             <Link
               key={t.slug}

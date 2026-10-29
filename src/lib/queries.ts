@@ -1,12 +1,16 @@
-import { and, arrayContains, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, arrayContains, desc, eq, gt, gte, inArray, or, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { articles, outlets, stories } from "@/db/schema";
+
+export const DEVELOPING_FRESH_HOURS = 3;
 
 export interface FeedFilters {
   topic?: string;
   /** Only stories updated in this many hours. */
   hours: number;
   region?: "uk" | "us" | "intl";
+  /** Only stories still gaining outlets, ordered by how fast. */
+  developing?: boolean;
 }
 
 export interface CoverageItem {
@@ -54,6 +58,17 @@ export async function getTopStories(filters: FeedFilters, limit = 30): Promise<S
   const since = new Date(Date.now() - filters.hours * 3_600_000);
   const conditions = [gt(stories.lastSeenAt, since)];
   if (filters.topic) conditions.push(arrayContains(stories.topics, [filters.topic]));
+  if (filters.developing) {
+    // Two or more outlets joined in the last hour, or a fresh story already
+    // picked up by three outlets within three hours of first appearing.
+    const freshSince = new Date(Date.now() - DEVELOPING_FRESH_HOURS * 3_600_000);
+    conditions.push(
+      or(
+        gte(stories.recentOutlets, 2),
+        and(gte(stories.outletCount, 3), gt(stories.firstSeenAt, freshSince)),
+      )!,
+    );
+  }
   if (filters.region) {
     conditions.push(
       sql`exists (select 1 from ${articles} a join ${outlets} o on o.id = a.outlet_id
@@ -65,7 +80,7 @@ export async function getTopStories(filters: FeedFilters, limit = 30): Promise<S
     .select()
     .from(stories)
     .where(and(...conditions))
-    .orderBy(desc(stories.score))
+    .orderBy(...(filters.developing ? [desc(stories.recentOutlets), desc(stories.score)] : [desc(stories.score)]))
     .limit(limit);
   if (rows.length === 0) return [];
 

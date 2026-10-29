@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "ingest": "tsx --env-file-if-exists=.env.local src/worker/ingest.ts",
     "ingest:watch": "tsx --env-file-if-exists=.env.local src/worker/ingest.ts --watch",
-    "recluster": "tsx --env-file-if-exists=.env.local src/worker/recluster.ts"
+    "recluster": "tsx --env-file-if-exists=.env.local src/worker/recluster.ts",
+    "check-feeds": "tsx src/worker/check-feeds.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.2",
