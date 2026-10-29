@@ -134,7 +134,7 @@ export const OUTLETS: OutletConfig[] = [
     kind: "national",
     quality: 0.85,
     feeds: [
-      { url: "https://www.telegraph.co.uk/news/rss.xml", topics: ["uk"] },
+      { url: "https://www.telegraph.co.uk/rss.xml", topics: ["uk"] },
       { url: "https://www.telegraph.co.uk/business/rss.xml", topics: ["business"] },
       { url: "https://www.telegraph.co.uk/football/rss.xml", topics: ["football"] },
     ],
@@ -247,7 +247,7 @@ export const OUTLETS: OutletConfig[] = [
     kind: "specialist",
     quality: 0.65,
     feeds: [
-      { url: "https://www.football365.com/feed", topics: ["football"] },
+      { url: "https://www.football365.com/rss", topics: ["football"] },
     ],
   },
   {
@@ -259,17 +259,6 @@ export const OUTLETS: OutletConfig[] = [
     quality: 0.8,
     feeds: [
       { url: "https://www.espn.com/espn/rss/soccer/news", topics: ["football"] },
-    ],
-  },
-  {
-    id: "new-scientist",
-    name: "New Scientist",
-    homepage: "https://www.newscientist.com",
-    region: "uk",
-    kind: "specialist",
-    quality: 0.9,
-    feeds: [
-      { url: "https://www.newscientist.com/feed/home/", topics: ["science"] },
     ],
   },
   {
@@ -325,17 +314,6 @@ export const OUTLETS: OutletConfig[] = [
     quality: 0.75,
     feeds: [
       { url: "https://www.engadget.com/rss.xml", topics: ["tech"] },
-    ],
-  },
-  {
-    id: "the-register",
-    name: "The Register",
-    homepage: "https://www.theregister.com",
-    region: "uk",
-    kind: "specialist",
-    quality: 0.8,
-    feeds: [
-      { url: "https://www.theregister.com/headlines.atom", topics: ["tech"] },
     ],
   },
   {
