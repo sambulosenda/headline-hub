@@ -1,9 +1,10 @@
 import { connection } from "next/server";
 import { Filters } from "./Filters";
+import { LiveUpdates } from "./LiveUpdates";
 import { StoryCard } from "./StoryCard";
 import { outboundUrl } from "@/lib/normalize";
 import { parseFilters, timeAgo, type SearchParams } from "@/lib/filters";
-import { getLatest, getTopStories } from "@/lib/queries";
+import { getLatest, getLatestArticleId, getTopStories } from "@/lib/queries";
 
 function Notice({ title, body }: { title: string; body: string }) {
   return (
@@ -33,15 +34,19 @@ export async function TopStories({
   // News must be fresh per request, never baked into the prerendered shell.
   // Called outside the try so its prerender signal isn't swallowed.
   await connection();
-  let stories;
+  let stories, since;
   try {
-    stories = (await getTopStories(filters)).filter((s) => s.coverage.length > 0);
+    [stories, since] = await Promise.all([
+      getTopStories(filters).then((all) => all.filter((s) => s.coverage.length > 0)),
+      getLatestArticleId(filters),
+    ]);
   } catch (err) {
     return loadError(err);
   }
 
   return (
     <div className="space-y-4">
+      <LiveUpdates since={since} topic={filters.topic} region={filters.region} />
       <Filters pathname={pathname} params={params} filters={filters} />
       {stories.length === 0 ? (
         <Notice title="No stories yet" body="Try a longer time window, or run the ingest worker." />
@@ -64,15 +69,16 @@ export async function LatestHeadlines({
   const params = await searchParams;
   const filters = parseFilters(params, topic);
   await connection();
-  let items;
+  let items, since;
   try {
-    items = await getLatest(filters);
+    [items, since] = await Promise.all([getLatest(filters), getLatestArticleId(filters)]);
   } catch (err) {
     return loadError(err);
   }
 
   return (
     <div className="space-y-4">
+      <LiveUpdates since={since} topic={filters.topic} region={filters.region} />
       <Filters pathname={pathname} params={params} filters={filters} showHours={false} />
       {items.length === 0 ? (
         <Notice title="No headlines yet" body="Run the ingest worker to pull in feeds." />
