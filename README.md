@@ -35,6 +35,10 @@ Keep the news flowing with `npm run ingest:watch`, which runs the worker every m
 - **Story pages** (`/story/123-headline-slug`, `src/app/story/[id]`): one shareable page per story with every outlet's version, share buttons, and link-preview tags (Open Graph and Twitter/X). The preview image is drawn by us from the headline and outlet names, never a publisher's photo. Only the number in the URL matters, so old links keep working when a story's headline changes.
 - Set `SITE_URL` (for example `https://headlinehub.co.uk`) in production so canonical links and preview images use the public domain. On Vercel the production domain is used automatically.
 
+## Accounts
+
+Sign-in is by emailed link, no passwords. Without `RESEND_API_KEY` and `EMAIL_FROM` the link is printed in the server terminal instead, which is all you need locally. Links work once for 15 minutes, at most 5 per address per hour, and sessions last 30 days.
+
 ## Scripts
 
 | Script | What it does |
@@ -58,4 +62,4 @@ Before going live: check each publisher's feed terms, keep to headlines, short d
 ## Roadmap
 
 - **Phase 2:** embedding-based clustering (done), live updates (done), Developing view (done), 53 feeds from 33 outlets (done).
-- **Phase 3:** muting sources, topics and keywords (done, per browser), accounts so preferences follow you, saved stories, alerts and digest, publisher feed submissions.
+- **Phase 3:** muting sources, topics and keywords (done), email-link sign-in so mutes follow you (done), saved stories, alerts and digest, publisher feed submissions.

@@ -1,7 +1,7 @@
 import { OUTLETS } from "@/config/outlets";
 import { TOPICS } from "@/config/topics";
 
-/** What a reader has chosen not to see. Stored in a cookie until accounts exist. */
+/** What a reader has chosen not to see. Kept in a cookie, or on the account once signed in. */
 export interface Mutes {
   outlets: string[];
   topics: string[];
@@ -59,4 +59,15 @@ export function toggle(values: string[], value: string): string[] {
 /** Escape a keyword for a SQL ILIKE pattern. */
 export function likePattern(keyword: string): string {
   return `%${keyword.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
+
+/** Union of two sets of mutes, e.g. this browser's choices joining an account's. */
+export function mergeMutes(a: Mutes, b: Mutes): Mutes {
+  return parseMutes(
+    serializeMutes({
+      outlets: [...a.outlets, ...b.outlets],
+      topics: [...a.topics, ...b.topics],
+      keywords: [...a.keywords, ...b.keywords],
+    }),
+  );
 }

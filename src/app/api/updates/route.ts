@@ -1,6 +1,8 @@
+import { loadPreferences, userForSession } from "@/lib/auth";
 import { MUTES_COOKIE, parseMutes } from "@/lib/mutes";
 import { countUpdates } from "@/lib/queries";
 import { parseScope, sseEvent } from "@/lib/sse";
+import { readCookie, SESSION_COOKIE } from "@/lib/tokens";
 
 const POLL_MS = 15_000;
 /** Close well inside serverless time limits; EventSource reconnects on its own. */
@@ -15,18 +17,10 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const { filters: scope, since } = parseScope(url.searchParams);
   const storyLevel = url.searchParams.get("stories") === "1";
-  const cookie = request.headers
-    .get("cookie")
-    ?.split(/;\s*/)
-    .find((c) => c.startsWith(`${MUTES_COOKIE}=`))
-    ?.slice(MUTES_COOKIE.length + 1);
-  let raw: string | null = null;
-  try {
-    raw = cookie ? decodeURIComponent(cookie) : null;
-  } catch {
-    // Malformed encoding: treat like any other bad cookie, as no mutes.
-  }
-  const filters = { ...scope, mutes: parseMutes(raw) };
+  const cookieHeader = request.headers.get("cookie");
+  const user = await userForSession(readCookie(cookieHeader, SESSION_COOKIE));
+  const mutes = user ? await loadPreferences(user.id) : parseMutes(readCookie(cookieHeader, MUTES_COOKIE));
+  const filters = { ...scope, mutes };
   const encoder = new TextEncoder();
   const { signal } = request;
 
