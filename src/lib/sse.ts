@@ -1,3 +1,4 @@
+import { findCountry } from "@/config/countries";
 import { isRegion } from "@/config/outlets";
 import type { ScopeFilters } from "./queries";
 
@@ -12,11 +13,13 @@ export function sseEvent(event: string, data: unknown, id?: string | number): st
 export function parseScope(params: URLSearchParams): { filters: ScopeFilters; since: number } {
   const region = params.get("region");
   const topic = params.get("topic");
+  const country = params.get("country");
   const since = Number(params.get("since"));
   return {
     filters: {
       topic: topic && /^[a-z-]{1,32}$/.test(topic) ? topic : undefined,
       region: isRegion(region) ? region : undefined,
+      country: country && findCountry(country) ? country : undefined,
     },
     since: Number.isSafeInteger(since) && since >= 0 ? since : 0,
   };

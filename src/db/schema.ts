@@ -44,6 +44,7 @@ export const stories = pgTable(
     title: text("title").notNull(),
     leadArticleId: integer("lead_article_id"),
     topics: text("topics").array().notNull().default([]),
+    countries: text("countries").array().notNull().default([]),
     outletCount: integer("outlet_count").notNull().default(1),
     recentOutlets: integer("recent_outlets").notNull().default(1),
     avgQuality: real("avg_quality").notNull().default(1),
@@ -51,7 +52,11 @@ export const stories = pgTable(
     firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
   },
-  (t) => [index("stories_score_idx").on(t.score), index("stories_last_seen_idx").on(t.lastSeenAt)],
+  (t) => [
+    index("stories_score_idx").on(t.score),
+    index("stories_last_seen_idx").on(t.lastSeenAt),
+    index("stories_countries_idx").using("gin", t.countries),
+  ],
 );
 
 export const articles = pgTable(
@@ -67,6 +72,8 @@ export const articles = pgTable(
     summary: text("summary").notNull().default(""),
     imageUrl: text("image_url"),
     topics: text("topics").array().notNull(),
+    /** Country codes the article is about (src/lib/countries.ts). */
+    countries: text("countries").array().notNull().default([]),
     tokens: text("tokens").array().notNull(),
     /** Unit-length headline embedding; null when embeddings were off. */
     embedding: real("embedding").array(),

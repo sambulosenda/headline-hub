@@ -2,6 +2,7 @@ import { and, eq, gt, inArray, isNull, lt, notInArray, or, sql } from "drizzle-o
 import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
+import { tagCountries } from "../lib/countries";
 import { getEmbedder, type Embedder } from "../lib/embeddings";
 import { parseFeed, type FeedItem } from "../lib/feeds";
 import { storyScore } from "../lib/ranking";
@@ -106,6 +107,7 @@ export async function storeItems(
   const known = new Map(existing.map((e) => [e.url, e.storyId]));
   // Topic slugs are config-defined identifiers, so a Postgres array literal is safe here.
   const topicsLiteral = `{${feed.topics.join(",")}}`;
+  const outletCountry = OUTLET_COUNTRY.get(feed.outletId);
 
   const fresh = items.filter((i) => !known.has(i.url));
   const vectors = embed && fresh.length > 0 ? await embedSafely(embed, fresh.map((i) => i.title)) : null;
@@ -144,6 +146,7 @@ export async function storeItems(
         summary: item.summary,
         imageUrl: item.imageUrl,
         topics: feed.topics,
+        countries: tagCountries(item.title, item.summary, outletCountry),
         tokens: match.tokens,
         embedding,
         publishedAt,
@@ -169,6 +172,8 @@ async function embedSafely(embed: Embedder, texts: string[]): Promise<number[][]
   }
 }
 
+const OUTLET_COUNTRY = new Map(OUTLETS.flatMap((o) => (o.country ? [[o.id, o.country] as const] : [])));
+
 interface StoryAggregate extends Record<string, unknown> {
   story_id: number;
   outlet_count: number;
@@ -177,11 +182,12 @@ interface StoryAggregate extends Record<string, unknown> {
   first_seen: Date;
   last_seen: Date;
   topics: string[];
+  countries: string[];
   lead_id: number;
   lead_title: string;
 }
 
-/** Recompute breadth, lead headline, topics and score for recent stories. */
+/** Recompute breadth, lead headline, topics, countries and score for recent stories. */
 export async function rescoreStories(db: Db, now = new Date()) {
   const since = new Date(now.getTime() - RESCORE_WINDOW_MS);
   const hourAgo = new Date(now.getTime() - 3_600_000);
@@ -214,6 +220,8 @@ export async function rescoreStories(db: Db, now = new Date()) {
            min(p.first_seen) as first_seen,
            max(p.last_seen) as last_seen,
            t.topics,
+           coalesce((select array_agg(distinct c order by c) from articles ac, unnest(ac.countries) c
+                     where ac.story_id = p.story_id), '{}') as countries,
            l.id as lead_id,
            l.title as lead_title
     from per_outlet p
@@ -241,6 +249,7 @@ export async function rescoreStories(db: Db, now = new Date()) {
         title: r.lead_title,
         leadArticleId: r.lead_id,
         topics: r.topics,
+        countries: r.countries,
         outletCount: r.outlet_count,
         recentOutlets: r.recent_outlets,
         avgQuality: r.avg_quality,

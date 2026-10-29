@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { CountryChips } from "@/components/CountryChips";
 import { FeedSkeleton, LatestHeadlines, TopStories } from "@/components/Feeds";
 import { TOPICS, findTopic } from "@/config/topics";
 
@@ -25,6 +26,7 @@ async function TopicFeed({ params, searchParams }: PageProps<"/topic/[slug]">) {
   return (
     <>
       <h1 className="mb-3 text-2xl font-bold">{topic.name}</h1>
+      {topic.slug === "africa" && <CountryChips />}
       <nav className="mb-4 flex gap-4 text-sm" aria-label="View">
         <Link href={pathname} className={tab(view === "top")}>
           Top
