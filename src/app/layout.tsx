@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,9 +9,14 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const description = "Every outlet's take on today's stories, grouped and ranked in the open.";
+
 export const metadata: Metadata = {
-  title: { default: "Headline Hub", template: "%s · Headline Hub" },
-  description: "Every outlet's take on today's stories, grouped and ranked in the open.",
+  metadataBase: siteUrl(),
+  title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
+  description,
+  openGraph: { siteName: SITE_NAME, type: "website", title: SITE_NAME, description },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

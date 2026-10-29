@@ -1,6 +1,8 @@
 import { explainScore } from "@/lib/ranking";
 import { outboundUrl } from "@/lib/normalize";
+import Link from "next/link";
 import { timeAgo } from "@/lib/filters";
+import { storyPath } from "@/lib/slug";
 import type { StoryWithCoverage } from "@/lib/queries";
 
 export function StoryCard({ story }: { story: StoryWithCoverage }) {
@@ -43,6 +45,9 @@ export function StoryCard({ story }: { story: StoryWithCoverage }) {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+        <Link href={storyPath(story.id, story.title)} className="text-accent hover:underline">
+          Full coverage &amp; share
+        </Link>
         {rest.length > 0 && (
           <details className="group">
             <summary className="cursor-pointer text-accent">

@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const outlets = pgTable("outlets", {
   id: text("id").primaryKey(),
@@ -74,6 +75,8 @@ export const articles = pgTable(
   (t) => [
     index("articles_story_idx").on(t.storyId),
     index("articles_published_idx").on(t.publishedAt),
+    // Full-text search over headline and summary; src/lib/search.ts must use the same expression.
+    index("articles_search_idx").using("gin", sql`to_tsvector('english', ${t.title} || ' ' || ${t.summary})`),
   ],
 );
 

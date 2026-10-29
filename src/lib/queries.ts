@@ -69,21 +69,27 @@ export async function getTopStories(filters: FeedFilters, limit = 30): Promise<S
     .limit(limit);
   if (rows.length === 0) return [];
 
-  const coverage = await db
+  const coverage = await loadCoverage(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...r, coverage: coverage.get(r.id) ?? [] }));
+}
+
+/** Every outlet's version of each story, best outlet first. */
+export async function loadCoverage(storyIds: number[]): Promise<Map<number, CoverageItem[]>> {
+  const byStory = new Map<number, CoverageItem[]>();
+  if (storyIds.length === 0) return byStory;
+  const coverage = await getDb()
     .select(coverageSelect())
     .from(articles)
     .innerJoin(outlets, eq(outlets.id, articles.outletId))
-    .where(inArray(articles.storyId, rows.map((r) => r.id)))
+    .where(inArray(articles.storyId, storyIds))
     .orderBy(desc(outlets.quality), articles.publishedAt);
 
-  const byStory = new Map<number, CoverageItem[]>();
   for (const c of coverage) {
     const list = byStory.get(c.storyId!) ?? [];
     list.push(c);
     byStory.set(c.storyId!, list);
   }
-
-  return rows.map((r) => ({ ...r, coverage: byStory.get(r.id) ?? [] }));
+  return byStory;
 }
 
 export interface LatestItem extends CoverageItem {
