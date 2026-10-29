@@ -9,7 +9,7 @@ This is Phase 1 of the plan: feed ingestion, story clustering, a transparent ran
 1. **Feed registry** (`src/config/outlets.ts`): outlets, their feeds and topics, region and an editorial quality weight.
 2. **Ingest worker** (`src/worker/ingest.ts`): polls each feed at most every 5 minutes with conditional GET (ETag / Last-Modified), checks robots.txt, identifies itself as `HeadlineHubBot`, and records failures per feed.
 3. **Normalise** (`src/lib/normalize.ts`, `src/lib/feeds.ts`): canonical URLs (tracking params stripped) are the dedupe key; HTML is stripped and text is capped.
-4. **Cluster** (`src/lib/similarity.ts`): a new headline joins an existing story from the last 48 hours when they share enough distinctive words. Phase 2 swaps this for embeddings.
+4. **Cluster** (`src/lib/similarity.ts`, `src/lib/embeddings.ts`): each headline is embedded with a small sentence model (all-MiniLM-L6-v2, run locally, about 23 MB downloaded on first use) and joins the closest story from the last 48 hours when the meaning matches. Shared names, places and numbers guard against look-alike stories ("family pays tribute to man killed in crash"). With `EMBEDDINGS=off`, or if the model can't load, it falls back to word overlap.
 5. **Rank** (`src/lib/ranking.ts`): score = breadth (distinct outlets) × average source quality × freshness (6 h half-life) × velocity (outlets joining in the last hour). No click data. Each card has a "Why this is here" panel built from the same numbers.
 6. **Web app** (`src/app`): Next.js App Router with Cache Components. The page shell is static; the news streams in per request.
 
@@ -35,6 +35,7 @@ Keep the news flowing with `npm run ingest:watch`, which runs the worker every m
 | `npm run dev` / `build` / `start` | Next.js app |
 | `npm run ingest` | One ingest pass |
 | `npm run ingest:watch` | Ingest on a loop |
+| `npm run recluster -- --dry-run` | Backfill embeddings and report how stories would group; add `--threshold=0.65,0.7,0.75` to compare, drop `--dry-run` to apply |
 | `npm run db:generate` | New migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations |
 | `npm test` | Unit tests (Vitest) |
@@ -48,5 +49,5 @@ Before going live: check each publisher's feed terms, keep to headlines, short d
 
 ## Roadmap
 
-- **Phase 2:** embedding-based clustering (pgvector), live updates over SSE, Developing view, free-only filter.
+- **Phase 2:** embedding-based clustering (done), live updates over SSE, Developing view, more sources.
 - **Phase 3:** accounts, follows and mutes, saved searches, alerts and digest, publisher feed submissions.

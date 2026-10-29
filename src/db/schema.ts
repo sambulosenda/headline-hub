@@ -65,6 +65,8 @@ export const articles = pgTable(
     imageUrl: text("image_url"),
     topics: text("topics").array().notNull(),
     tokens: text("tokens").array().notNull(),
+    /** Unit-length headline embedding; null when embeddings were off. */
+    embedding: real("embedding").array(),
     /** Publisher's date when given and sane, otherwise when we first saw it. */
     publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
