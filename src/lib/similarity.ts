@@ -73,6 +73,21 @@ export interface Headline {
   tokens: string[];
   keys: string[];
   embedding?: number[] | null;
+  /** Live blogs, newsletters and roundups cover many events, so they never cluster. */
+  roundup?: boolean;
+}
+
+const ROUNDUP_PATTERNS = [
+  /[–—-]\s*(live|as it happened)$/i,
+  /^live[:–—-]/i,
+  /\blive (updates?|blog|coverage)\b/i,
+  /\bas it happened\b/i,
+  /\.\s+And,\s/, // NPR-style newsletter: "X. And, Y"
+  /\b(newsletter|(?:morning|evening|daily) briefing|podcast|quiz|cartoon|football daily)\b/i,
+];
+
+export function isRoundup(title: string): boolean {
+  return ROUNDUP_PATTERNS.some((re) => re.test(title.trim()));
 }
 
 export interface ClusterCandidate extends Headline {
@@ -80,7 +95,7 @@ export interface ClusterCandidate extends Headline {
 }
 
 export function headline(title: string, embedding: number[] | null = null): Headline {
-  return { tokens: titleTokens(title), keys: keyTerms(title), embedding };
+  return { tokens: titleTokens(title), keys: keyTerms(title), embedding, roundup: isRoundup(title) };
 }
 
 /** True when both have key terms and none are shared: a strong sign of two different events. */
@@ -94,6 +109,7 @@ function keysDisagree(a: Headline, b: Headline) {
  * numbers guard against look-alike stories. Without embeddings, word overlap.
  */
 export function matchScore(a: Headline, b: Headline, threshold = SEMANTIC_THRESHOLD): number {
+  if (a.roundup || b.roundup) return 0;
   const sharedTokens = sharedCount(a.tokens, b.tokens);
   if (a.embedding && b.embedding) {
     const sim = cosine(a.embedding, b.embedding);

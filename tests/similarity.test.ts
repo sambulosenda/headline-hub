@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findStory, headline, keyTerms, matchScore, titleTokens } from "@/lib/similarity";
+import { findStory, headline, isRoundup, keyTerms, matchScore, titleTokens } from "@/lib/similarity";
 
 /** Unit vector at a given cosine to [1, 0]. */
 const at = (cos: number) => [cos, Math.sqrt(1 - cos * cos)];
@@ -87,5 +87,21 @@ describe("findStory", () => {
     ];
     expect(findStory(headline("Bank of England holds rates at 4% as inflation lingers"), candidates)).toBe(2);
     expect(findStory(headline("Heatwave warning issued for south-east"), candidates)).toBeNull();
+  });
+});
+
+describe("roundups", () => {
+  it("recognises live blogs, newsletters and roundups", () => {
+    expect(isRoundup("Everton 3-1 Newcastle – live")).toBe(true);
+    expect(isRoundup("Israel's election too close to call. And, the Ebola outbreak spreads")).toBe(true);
+    expect(isRoundup("Football Daily | Fleetwood stun Arsenal")).toBe(true);
+    expect(isRoundup("Fleetwood stun Arsenal in Carabao Cup upset")).toBe(false);
+    expect(isRoundup("Pentagon briefing on Iran strikes")).toBe(false);
+  });
+
+  it("never clusters a roundup, however similar", () => {
+    const story = headline("Fleetwood stun Arsenal in Carabao Cup upset", base);
+    const live = headline("Fleetwood v Arsenal – live", at(0.95));
+    expect(matchScore(story, live)).toBe(0);
   });
 });

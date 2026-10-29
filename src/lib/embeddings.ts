@@ -4,7 +4,8 @@
  * the worker, so no API key is needed. Set EMBEDDINGS=off to fall back to
  * word-overlap clustering.
  */
-export const EMBEDDING_MODEL = "onnx-community/all-MiniLM-L6-v2-ONNX";
+// This repo ships the q8 (model_quantized.onnx) weights that `dtype: "q8"` loads.
+export const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
 
 export type Embedder = (texts: string[]) => Promise<number[][]>;
 
