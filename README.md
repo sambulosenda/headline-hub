@@ -39,6 +39,8 @@ Keep the news flowing with `npm run ingest:watch`, which runs the worker every m
 
 Sign-in is by emailed link, no passwords. Without `RESEND_API_KEY` and `EMAIL_FROM` the link is printed in the server terminal instead, which is all you need locally. Links work once for 15 minutes, at most 5 per address per hour, and sessions last 30 days.
 
+Signed-in readers can save stories (bookmark on each card and story page, listed at `/saved`). If reclustering merges a saved story into another, the save follows its lead article to the new story.
+
 ## Scripts
 
 | Script | What it does |
@@ -62,4 +64,4 @@ Before going live: check each publisher's feed terms, keep to headlines, short d
 ## Roadmap
 
 - **Phase 2:** embedding-based clustering (done), live updates (done), Developing view (done), 53 feeds from 33 outlets (done).
-- **Phase 3:** muting sources, topics and keywords (done), email-link sign-in so mutes follow you (done), saved stories, alerts and digest, publisher feed submissions.
+- **Phase 3:** muting sources, topics and keywords (done), email-link sign-in so mutes follow you (done), saved stories (done), alerts and digest, publisher feed submissions.

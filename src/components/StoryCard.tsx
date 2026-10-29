@@ -6,8 +6,17 @@ import { storyPath } from "@/lib/slug";
 import type { StoryWithCoverage } from "@/lib/queries";
 import { findTopic } from "@/config/topics";
 import { toggleOutletMute, toggleTopicMute } from "@/app/settings/actions";
+import { SaveButton } from "./SaveButton";
 
-export function StoryCard({ story, mutedTopics = [] }: { story: StoryWithCoverage; mutedTopics?: string[] }) {
+export function StoryCard({
+  story,
+  mutedTopics = [],
+  saved = false,
+}: {
+  story: StoryWithCoverage;
+  mutedTopics?: string[];
+  saved?: boolean;
+}) {
   const [lead, ...rest] = story.coverage;
   if (!lead) return null;
   const developing = story.recentOutlets >= 2;
@@ -50,6 +59,7 @@ export function StoryCard({ story, mutedTopics = [] }: { story: StoryWithCoverag
         <Link href={storyPath(story.id, story.title)} className="text-accent hover:underline">
           Full coverage &amp; share
         </Link>
+        <SaveButton storyId={story.id} saved={saved} />
         {rest.length > 0 && (
           <details className="group">
             <summary className="cursor-pointer text-accent">

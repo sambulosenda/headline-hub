@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { FeedSkeleton } from "@/components/Feeds";
 import { SearchBox } from "@/components/SearchBox";
 import { StoryCard } from "@/components/StoryCard";
+import { savedByCurrentUser } from "@/lib/saved";
 import { parseSearch, searchHref, searchStories, WITHIN_OPTIONS } from "@/lib/search";
 
 export async function generateMetadata({ searchParams }: PageProps<"/search">): Promise<Metadata> {
@@ -30,9 +31,10 @@ async function Results({ searchParams }: PageProps<"/search">) {
 
   // Results must be fresh per request; called outside the try so its prerender signal isn't swallowed.
   await connection();
-  let results;
+  let results, saved;
   try {
     results = (await searchStories(input)).filter((s) => s.coverage.length > 0);
+    saved = await savedByCurrentUser(results.map((s) => s.id));
   } catch (err) {
     console.error(err);
     return <Notice title="Search isn't working right now" body="Check DATABASE_URL and that migrations have run." />;
@@ -61,7 +63,7 @@ async function Results({ searchParams }: PageProps<"/search">) {
           </Link>
         )
       ) : (
-        results.map((s) => <StoryCard key={s.id} story={s} />)
+        results.map((s) => <StoryCard key={s.id} story={s} saved={saved.has(s.id)} />)
       )}
     </div>
   );

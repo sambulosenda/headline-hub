@@ -4,6 +4,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   real,
   serial,
   text,
@@ -122,6 +123,22 @@ export const userPreferences = pgTable("user_preferences", {
   mutes: jsonb("mutes").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const savedStories = pgTable(
+  "saved_stories",
+  {
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    storyId: integer("story_id")
+      .notNull()
+      .references(() => stories.id, { onDelete: "cascade" }),
+    /** The story's lead article when saved, so the save can follow it if reclustering moves it. */
+    articleId: integer("article_id").references(() => articles.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.storyId] }), index("saved_stories_user_idx").on(t.userId, t.createdAt)],
+);
 
 export type Outlet = typeof outlets.$inferSelect;
 export type Article = typeof articles.$inferSelect;

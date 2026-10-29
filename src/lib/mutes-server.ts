@@ -1,3 +1,4 @@
+import { refresh } from "next/cache";
 import { cookies } from "next/headers";
 import { getCurrentUser, loadPreferences, savePreferences } from "./auth";
 import { MUTES_COOKIE, parseMutes, serializeMutes, type Mutes } from "./mutes";
@@ -16,7 +17,11 @@ export async function getMutes(): Promise<Mutes> {
 /** Only callable from a server action or route handler, since it may set a cookie. */
 export async function saveMutes(mutes: Mutes) {
   const user = await getCurrentUser();
-  if (user) return savePreferences(user.id, mutes);
+  if (user) {
+    await savePreferences(user.id, mutes);
+    // No cookie changed, so ask the router to re-render with the new mutes.
+    return refresh();
+  }
   const value = serializeMutes(mutes);
   // Non-Latin keywords percent-encode to several bytes a character, so check the encoded size.
   if (encodeURIComponent(value).length > MAX_COOKIE_BYTES) return;
