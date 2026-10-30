@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { FeedSkeleton } from "@/components/Feeds";
 import { SaveButton } from "@/components/SaveButton";
+import { StoryImage } from "@/components/StoryImage";
 import { ShareButtons } from "@/components/ShareButtons";
 import { findTopic } from "@/config/topics";
 import { timeAgo } from "@/lib/filters";
@@ -15,7 +16,7 @@ import { SITE_NAME, siteUrl } from "@/lib/site";
 import { parseStoryId, storyPath } from "@/lib/slug";
 import { coverageLine, getStory, outletNames } from "@/lib/story";
 import { COUNTRIES } from "@/config/countries";
-import { coverageStrip, coverageTimeline, originCounts, type Origin } from "@/lib/coverage";
+import { coverageStrip, coverageTimeline, originCounts, storyImage, type Origin } from "@/lib/coverage";
 import { entitiesIn } from "@/lib/names";
 
 export async function generateMetadata({ params }: PageProps<"/story/[id]">): Promise<Metadata> {
@@ -102,6 +103,7 @@ async function StoryView({ params, searchParams }: PageProps<"/story/[id]">) {
     international: "International",
   };
   const summary = story.coverage.find((c) => c.summary)?.summary;
+  const image = storyImage(story);
   const shown = from ? timeline.filter((e) => e.origin === from) : timeline;
   const people = entitiesIn(story.title, 6);
 
@@ -128,30 +130,37 @@ async function StoryView({ params, searchParams }: PageProps<"/story/[id]">) {
           )}
           {developing && <span className="ml-2 font-semibold text-warn">Developing</span>}
         </p>
-        <h1 className="mt-3 max-w-[22ch] text-[1.75rem] leading-[1.1] font-extrabold tracking-[-0.03em] text-balance sm:text-[2.5rem] sm:leading-[1.06]">
-          {story.title}
-        </h1>
-        {summary && <p className="mt-3 max-w-[62ch] text-[1.0625rem] text-subtle">{summary}</p>}
-        <p className="mt-4 flex flex-wrap gap-x-7 gap-y-1 text-[0.875rem] text-subtle">
-          <span>
-            First reported <b className="font-semibold text-foreground">{timeAgo(first.publishedAt)} ago</b> by {first.outletName}
-          </span>
-          <span>
-            <b className="font-semibold text-foreground">
-              {names.length} {names.length === 1 ? "outlet" : "outlets"}
-            </b>
-            {names.length > 1 &&
-              (timeline.length === 1 ? ", all with the same headline" : `, ${timeline.length} different headlines`)}
-          </span>
-          {story.recentOutlets > 0 && (
-            <span className="text-warn">
-              <b className="font-semibold">{story.recentOutlets} joined</b> in the last hour
-            </span>
-          )}
-        </p>
-        <div className="mt-5 flex flex-wrap items-center gap-4">
-          <ShareButtons url={url} title={story.title} />
-          <SaveButton storyId={story.id} saved={!!saved} />
+        <div className={image ? "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,36%)] lg:grid-rows-[auto_1fr] lg:gap-x-10" : undefined}>
+          <div className="lg:col-start-1">
+            <h1 className="mt-3 max-w-[22ch] text-[1.75rem] leading-[1.1] font-extrabold tracking-[-0.03em] text-balance sm:text-[2.5rem] sm:leading-[1.06]">
+              {story.title}
+            </h1>
+            {summary && <p className="mt-3 max-w-[62ch] text-[1.0625rem] text-subtle">{summary}</p>}
+          </div>
+          {image && <StoryImage {...image} priority className="mt-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-3" />}
+          <div className="lg:col-start-1">
+            <p className="mt-4 flex flex-wrap gap-x-7 gap-y-1 text-[0.875rem] text-subtle">
+              <span>
+                First reported <b className="font-semibold text-foreground">{timeAgo(first.publishedAt)} ago</b> by {first.outletName}
+              </span>
+              <span>
+                <b className="font-semibold text-foreground">
+                  {names.length} {names.length === 1 ? "outlet" : "outlets"}
+                </b>
+                {names.length > 1 &&
+                  (timeline.length === 1 ? ", all with the same headline" : `, ${timeline.length} different headlines`)}
+              </span>
+              {story.recentOutlets > 0 && (
+                <span className="text-warn">
+                  <b className="font-semibold">{story.recentOutlets} joined</b> in the last hour
+                </span>
+              )}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-4">
+              <ShareButtons url={url} title={story.title} />
+              <SaveButton storyId={story.id} saved={!!saved} />
+            </div>
+          </div>
         </div>
       </header>
 
