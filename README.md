@@ -43,6 +43,17 @@ Signed-in readers can save stories (bookmark on each card and story page, listed
 
 Signed-in readers can turn on a **daily digest** (top 10 stories, sent from `DIGEST_HOUR`, default 7am server time) and **breaking-news alerts** (a story 5+ outlets cover, with 3+ joining in the last hour, first seen within 3 hours; at most 3 a day) in `/settings`. Both respect the reader's mutes, and every email has a one-click unsubscribe link. Run `npm run notify:watch` alongside `ingest:watch` to send them (every 5 minutes). Without `RESEND_API_KEY` the emails are printed in that terminal instead.
 
+## People, clubs and companies
+
+Each name in the news has its own page at `/entity/[slug]`, built from articles whose headline or summary contains the name as a phrase (the same full-text index search uses). They come from two sources:
+
+- **Listed names** in `src/config/entities.ts`: about 120 people, clubs and national teams, companies, organisations and places, each with aliases (e.g. "Man Utd" for Manchester United). These also show as links under matching headlines on story cards. To add one, add a line there. Keep the terms specific, because a word that is also a common noun pulls in unrelated stories.
+- **Spotted names**: runs of 2 to 4 capitalised words in headlines (e.g. "Hurricane Melissa", "Supreme Court") that at least 3 different outlets used in the last 24 hours. Needing several outlets filters out one outlet's Title Case headlines. Pages for spotted names keep working for 30 days after outlets stop using them.
+
+The ingest worker recounts both on each pass (at most every 10 minutes unless new articles arrived) into `trending_names`. The front page's "In the news" row and `/entities` show the names the most outlets are using right now.
+
+Readers can **Follow** a name and see everything they follow at `/following`, or **Mute** it. Muting adds the name's terms as keyword mutes, so it shows in and can be undone from settings. Follows live alongside mutes: in the browser cookie, or on the account once signed in. Keyword mutes now match whole words, so muting "ai" no longer hides "said".
+
 ## Countries
 
 Country pages (`/country/zw`, linked from the Africa tab) show stories about one country: local stories from that country's own outlets (the `country` field in `src/config/outlets.ts`; a story counts when those outlets make up at least half its coverage, so world news they also run does not), plus any article whose headline or summary names it, its capital, big cities or other unambiguous terms (`src/config/countries.ts`). Ingest tags new articles; after changing the country list or terms, or after first adding the migration, run `npm run tag-countries` once to re-tag everything.

@@ -14,6 +14,17 @@ function mutesKey(mutes: Mutes) {
   return createHash("sha256").update(serializeMutes(mutes)).digest("hex").slice(0, 8);
 }
 
+/** Narrows a feed to stories naming an entity, or everything the reader follows. */
+interface MentionProps {
+  /** Phrases to match; must be non-empty when given. */
+  mentions?: string[];
+  /** Entity slug, so live updates match the same stories. */
+  entity?: string;
+  /** This is the Following page. */
+  following?: boolean;
+  empty?: { title: string; body: string };
+}
+
 function Notice({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-xl border border-dashed border-line p-8 text-center">
@@ -34,15 +45,19 @@ export async function TopStories({
   topic,
   country,
   developing = false,
+  mentions,
+  entity,
+  following = false,
+  empty,
 }: {
   pathname: string;
   searchParams: Promise<SearchParams>;
   topic?: string;
   country?: string;
   developing?: boolean;
-}) {
+} & MentionProps) {
   const params = await searchParams;
-  const filters = { ...parseFilters(params, topic), country, developing, mutes: await getMutes() };
+  const filters = { ...parseFilters(params, topic), country, developing, mentions, mutes: await getMutes() };
   // News must be fresh per request, never baked into the prerendered shell.
   // Called outside the try so its prerender signal isn't swallowed.
   await connection();
@@ -64,17 +79,20 @@ export async function TopStories({
         topic={filters.topic}
         region={filters.region}
         country={filters.country}
+        entity={entity}
+        following={following}
         stories
         mutesKey={mutesKey(filters.mutes)}
       />
       <Filters pathname={pathname} params={params} filters={filters} />
       {stories.length === 0 ? (
         <Notice
-          title={developing ? "Nothing developing right now" : "No stories yet"}
+          title={empty?.title ?? (developing ? "Nothing developing right now" : "No stories yet")}
           body={
-            developing
+            empty?.body ??
+            (developing
               ? "Stories show here while outlets are still picking them up. Check back soon."
-              : "Try a longer time window, or run the ingest worker."
+              : "Try a longer time window, or run the ingest worker.")
           }
         />
       ) : (
@@ -89,14 +107,18 @@ export async function LatestHeadlines({
   searchParams,
   topic,
   country,
+  mentions,
+  entity,
+  following = false,
+  empty,
 }: {
   pathname: string;
   searchParams: Promise<SearchParams>;
   topic?: string;
   country?: string;
-}) {
+} & MentionProps) {
   const params = await searchParams;
-  const filters = { ...parseFilters(params, topic), country, mutes: await getMutes() };
+  const filters = { ...parseFilters(params, topic), country, mentions, mutes: await getMutes() };
   await connection();
   let items, since;
   try {
@@ -112,11 +134,13 @@ export async function LatestHeadlines({
         topic={filters.topic}
         region={filters.region}
         country={filters.country}
+        entity={entity}
+        following={following}
         mutesKey={mutesKey(filters.mutes)}
       />
       <Filters pathname={pathname} params={params} filters={filters} showHours={false} />
       {items.length === 0 ? (
-        <Notice title="No headlines yet" body="Run the ingest worker to pull in feeds." />
+        <Notice title={empty?.title ?? "No headlines yet"} body={empty?.body ?? "Run the ingest worker to pull in feeds."} />
       ) : (
         <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
           {items.map((a) => (

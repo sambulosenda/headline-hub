@@ -12,6 +12,7 @@ describe("parseScope", () => {
     expect(parseScope(new URLSearchParams("topic=football&region=uk&since=120"))).toEqual({
       filters: { topic: "football", region: "uk" },
       since: 120,
+      following: false,
     });
   });
 
@@ -20,9 +21,16 @@ describe("parseScope", () => {
   });
 
   it("drops anything unexpected", () => {
-    expect(parseScope(new URLSearchParams("topic=x;drop&region=mars&since=-4"))).toEqual({
+    expect(parseScope(new URLSearchParams("topic=x;drop&region=mars&since=-4&entity=Bad Slug!"))).toEqual({
       filters: { topic: undefined, region: undefined },
       since: 0,
+      following: false,
     });
+  });
+
+  it("passes an entity slug and the Following flag through", () => {
+    const scope = parseScope(new URLSearchParams("entity=manchester-united&following=1"));
+    expect(scope.entity).toBe("manchester-united");
+    expect(scope.following).toBe(true);
   });
 });
