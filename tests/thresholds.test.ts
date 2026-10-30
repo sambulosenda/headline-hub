@@ -8,6 +8,7 @@ describe("thresholds", () => {
 
   it("treats a number as the semantic cut-off with MiniLM's others", () => {
     expect(matchScore(a, b, 0.7)).toBe(matchScore(a, b, MINILM_THRESHOLDS));
+    expect(matchScore(a, b, 0.9)).toBe(0);
   });
 
   it("lets another model's stricter cut-offs reject a MiniLM-level match", () => {

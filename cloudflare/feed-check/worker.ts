@@ -17,7 +17,7 @@ const worker = {
       return new Response("Not found\n", { status: 404 });
     }
     const egress = await fetch("https://api.ipify.org", { signal: AbortSignal.timeout(5_000) })
-      .then((r) => r.text())
+      .then((r) => (r.ok ? r.text() : "unknown"))
       .catch(() => "unknown");
     const results = await checkAll(feedJobs(url.searchParams.getAll("url")));
     const failed = results.filter((r) => !r.ok);

@@ -14,5 +14,7 @@ describe("pairAgreement", () => {
     const split = pairAgreement([[1, 2], [3, 4]], [[1], [2], [3, 4]]);
     expect(split.precision).toBe(1);
     expect(split.recall).toBe(0.5);
+    expect(merged.f1).toBeCloseTo(0.5);
+    expect(split.f1).toBeCloseTo(2 / 3);
   });
 });
