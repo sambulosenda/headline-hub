@@ -41,24 +41,24 @@ async function Results({ searchParams }: PageProps<"/search">) {
   }
 
   const chip = (active: boolean) =>
-    `rounded-md px-2.5 py-1 ${active ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-surface hover:text-foreground"}`;
+    `flex min-h-9 shrink-0 items-center ${active ? "font-semibold text-foreground" : "text-muted hover:text-foreground"}`;
   return (
     <div className="space-y-4">
-      <nav className="flex flex-wrap gap-1 text-sm" aria-label="Time window">
+      <nav className="-mx-4 flex gap-4 overflow-x-auto px-4 text-sm [scrollbar-width:none]" aria-label="Time window">
         {WITHIN_OPTIONS.map((o) => (
           <Link key={o.value} href={searchHref(input, o.value)} className={chip(o.value === input.within)}>
             {o.label}
           </Link>
         ))}
       </nav>
-      <p className="text-sm text-muted" role="status">
+      <p className="border-b-2 border-foreground pb-2.5 text-[0.9375rem] font-bold" role="status">
         {results.length === 0
           ? `No stories match "${input.q}".`
           : `${results.length}${results.length === 30 ? "+" : ""} ${results.length === 1 ? "story" : "stories"} for "${input.q}"`}
       </p>
       {results.length === 0 ? (
         input.within !== "all" && (
-          <Link href={searchHref(input, "all")} className="text-sm text-accent hover:underline">
+          <Link href={searchHref(input, "all")} className="text-sm underline underline-offset-4">
             Search any time instead
           </Link>
         )
@@ -81,7 +81,7 @@ async function SearchForm({ searchParams }: PageProps<"/search">) {
 export default function SearchPage(props: PageProps<"/search">) {
   return (
     <>
-      <h1 className="mb-3 text-2xl font-bold">Search</h1>
+      <h1 className="mb-3 text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">Search</h1>
       <Suspense fallback={<SearchBox className="mb-4" />}>
         <SearchForm {...props} />
       </Suspense>
