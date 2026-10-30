@@ -20,8 +20,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      // Create once: npx wrangler hyperdrive create headline-hub --connection-string="<Neon URL>", then paste its id here.
-      "id": "00000000000000000000000000000000",
+      // Neon (London) via: npx wrangler hyperdrive create headline-hub --connection-string="<Neon direct URL>"
+      "id": "384b44ef2fda4ecbbcc3dd092f50e54d",
       // Used by `npm run cf:preview` instead of Hyperdrive.
       "localConnectionString": "postgres://headlines:headlines@localhost:5432/headlines"
     }
