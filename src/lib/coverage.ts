@@ -50,3 +50,33 @@ export function originCounts(bars: StripBar[]): Record<Origin, number> {
   for (const b of bars) counts[b.origin]++;
   return counts;
 }
+
+type CoverageItem = StoryWithCoverage["coverage"][number];
+
+export interface TimelineEntry {
+  item: CoverageItem;
+  origin: Origin;
+  /** Later outlets that ran the same headline word for word, folded into this entry. */
+  copies: CoverageItem[];
+}
+
+const headlineKey = (title: string) => title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+/** Every outlet's version in the order it appeared, with word-for-word repeats folded into the first. */
+export function coverageTimeline(story: Pick<StoryWithCoverage, "countries" | "topics" | "coverage">): TimelineEntry[] {
+  const entries: TimelineEntry[] = [];
+  const byHeadline = new Map<string, TimelineEntry>();
+  const sorted = [...story.coverage].sort((a, b) => a.publishedAt.getTime() - b.publishedAt.getTime());
+  for (const item of sorted) {
+    const key = headlineKey(item.title);
+    const first = byHeadline.get(key);
+    if (first) {
+      first.copies.push(item);
+      continue;
+    }
+    const entry = { item, origin: outletOrigin(item, story), copies: [] };
+    byHeadline.set(key, entry);
+    entries.push(entry);
+  }
+  return entries;
+}

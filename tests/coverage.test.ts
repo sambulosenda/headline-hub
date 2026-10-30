@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coverageStrip, originCounts, outletOrigin } from "@/lib/coverage";
+import { coverageStrip, coverageTimeline, originCounts, outletOrigin } from "@/lib/coverage";
 
 const now = new Date("2026-10-30T12:00:00Z");
 const minsAgo = (m: number) => new Date(now.getTime() - m * 60_000);
@@ -53,5 +53,17 @@ describe("coverageStrip", () => {
       { origin: "international", recent: true },
     ]);
     expect(originCounts(bars)).toEqual({ local: 1, regional: 1, international: 1 });
+  });
+});
+
+describe("coverageTimeline", () => {
+  it("orders by time and folds word-for-word repeats into the first", () => {
+    const a = { ...item("herald", "africa", "zw", 300), title: "ZERA announces new fuel prices" };
+    const b = { ...item("zbc", "africa", "zw", 280), title: "ZERA announces new fuel prices." };
+    const c = { ...item("reuters", "intl", null, 100), title: "Zimbabwe raises fuel prices" };
+    const entries = coverageTimeline({ countries: ["zw"], topics: [], coverage: [c, b, a] });
+    expect(entries.map((e) => e.item.outletId)).toEqual(["herald", "reuters"]);
+    expect(entries[0].copies.map((x) => x.outletId)).toEqual(["zbc"]);
+    expect(entries[1].origin).toBe("international");
   });
 });
