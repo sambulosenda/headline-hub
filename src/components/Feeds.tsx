@@ -3,7 +3,7 @@ import { Filters } from "./Filters";
 import { LiveUpdates } from "./LiveUpdates";
 import Link from "next/link";
 import { Suspense } from "react";
-import { StoryCard, StoryList } from "./StoryCard";
+import { LeadStory, StoryCard, StoryList } from "./StoryCard";
 import { outboundUrl } from "@/lib/normalize";
 import { parseFilters, timeAgo, withParam, type SearchParams } from "@/lib/filters";
 import { getLatest, getLatestArticleId, getTopStories, type FeedFilters } from "@/lib/queries";
@@ -12,6 +12,8 @@ import { createHash } from "node:crypto";
 import { serializeMutes, type Mutes } from "@/lib/mutes";
 import { getMutes } from "@/lib/mutes-server";
 import { savedByCurrentUser } from "@/lib/saved";
+import { getTrending } from "@/lib/entities";
+import { COUNTRIES } from "@/config/countries";
 
 function mutesKey(mutes: Mutes) {
   return createHash("sha256").update(serializeMutes(mutes)).digest("hex").slice(0, 8);
@@ -52,12 +54,15 @@ export async function TopStories({
   entity,
   following = false,
   empty,
+  front = false,
 }: {
   pathname: string;
   searchParams: Promise<SearchParams>;
   topic?: string;
   country?: string;
   developing?: boolean;
+  /** The front page: the top story gets a lead, the rest sit in two columns, and the side column adds Africa and names. */
+  front?: boolean;
 } & MentionProps) {
   const params = await searchParams;
   const filters = { ...parseFilters(params, topic), country, developing, mentions, mutes: await getMutes() };
@@ -111,6 +116,23 @@ export async function TopStories({
               : "Try a longer time window, or run the ingest worker.")
           }
         />
+      ) : front ? (
+        <>
+          <LeadStory story={stories[0]} mutedTopics={filters.mutes.topics} saved={saved.has(stories[0].id)} />
+          {stories.length > 1 && (
+            <section aria-labelledby="top-stories">
+              <h2 id="top-stories" className="border-b-2 border-foreground pb-2.5 text-[0.9375rem] font-bold">
+                Top stories
+              </h2>
+              {/* Two columns on wide screens; every row keeps a rule under it so the columns line up. */}
+              <div className="grid xl:grid-cols-2 xl:gap-x-10 [&>*]:border-b [&>*]:border-line">
+                {stories.slice(1).map((s) => (
+                  <StoryCard key={s.id} story={s} mutedTopics={filters.mutes.topics} saved={saved.has(s.id)} />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       ) : (
         <StoryList>
           {stories.map((s) => (
@@ -120,7 +142,7 @@ export async function TopStories({
       )}
     </div>
       <Suspense fallback={null}>
-        <Rail filters={filters} latestHref={latestHref} developingHref={developingHref} showDeveloping={!developing} />
+        <Rail filters={filters} latestHref={latestHref} developingHref={developingHref} showDeveloping={!developing} front={front} />
       </Suspense>
     </div>
   );
@@ -133,6 +155,9 @@ function onePerStory<T extends { storyId: number | null }>(items: T[]): T[] {
   return items.filter((a) => a.storyId === null || (!seen.has(a.storyId) && seen.add(a.storyId)));
 }
 const RAIL_DEVELOPING = 5;
+const RAIL_LATEST_FRONT = 6;
+const RAIL_AFRICA = 5;
+const RAIL_NAMES = 8;
 
 /** Right-hand column on wide screens: what's developing and the newest headlines, in the same scope as the feed. */
 async function Rail({
@@ -140,18 +165,24 @@ async function Rail({
   latestHref,
   developingHref,
   showDeveloping,
+  front,
 }: {
   filters: FeedFilters;
   latestHref?: string;
   developingHref?: string;
   showDeveloping: boolean;
+  front: boolean;
 }) {
-  let latest, developing;
+  let latest, developing, africa, names;
   try {
-    [latest, developing] = await Promise.all([
+    [latest, developing, africa, names] = await Promise.all([
       // Fetch extra so there are still enough after keeping one headline per story.
-      getLatest(filters, RAIL_LATEST * 3).then((items) => onePerStory(items).slice(0, RAIL_LATEST)),
+      getLatest(filters, (front ? RAIL_LATEST_FRONT : RAIL_LATEST) * 3).then((items) =>
+        onePerStory(items).slice(0, front ? RAIL_LATEST_FRONT : RAIL_LATEST),
+      ),
       showDeveloping ? getTopStories({ ...filters, developing: true }, RAIL_DEVELOPING) : [],
+      front ? getTopStories({ ...filters, topic: "africa" }, RAIL_AFRICA) : [],
+      front ? getTrending(RAIL_NAMES).catch(() => []) : [],
     ]);
   } catch (err) {
     console.error(err);
@@ -181,6 +212,57 @@ async function Rail({
                   {s.outletCount} outlets
                   {s.recentOutlets > 0 && <span className="text-warn"> · +{s.recentOutlets} in the last hour</span>}
                 </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {africa.length > 0 && (
+        <section>
+          <h2 className={heading}>
+            <span>Africa</span>
+            <Link href="/topic/africa" className="text-[0.8125rem] font-medium text-muted hover:text-foreground">
+              See all
+            </Link>
+          </h2>
+          <ul className="divide-y divide-line text-sm">
+            {africa.map((s) => {
+              const place = COUNTRIES.find((c) => s.countries.includes(c.code));
+              return (
+                <li key={s.id} className="py-2.5">
+                  <Link href={storyPath(s.id, s.title)} className="leading-snug hover:underline">
+                    {s.title}
+                  </Link>
+                  <p className="mt-0.5 text-[0.8125rem] text-muted">
+                    {place && (
+                      <Link href={`/country/${place.code}`} className="text-accent hover:underline">
+                        {place.name}
+                      </Link>
+                    )}
+                    {place && " · "}
+                    {s.outletCount} {s.outletCount === 1 ? "outlet" : "outlets"}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+      {names.length > 0 && (
+        <section>
+          <h2 className={heading}>
+            <span>In the news</span>
+            <Link href="/entities" className="text-[0.8125rem] font-medium text-muted hover:text-foreground">
+              See all
+            </Link>
+          </h2>
+          <ul className="grid grid-cols-2 gap-x-5 text-sm">
+            {names.map((n) => (
+              <li key={n.slug} className="flex justify-between gap-2 border-b border-line py-2">
+                <Link href={`/entity/${n.slug}`} className="truncate hover:underline">
+                  {n.name}
+                </Link>
+                <span className="font-mono text-xs tabular-nums text-muted">{n.outlets}</span>
               </li>
             ))}
           </ul>
