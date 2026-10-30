@@ -94,3 +94,12 @@ export function splitByLocalCoverage<S extends Pick<StoryWithCoverage, "coverage
   for (const s of stories) (s.coverage.some((c) => c.outletCountry === country) ? local : abroad).push(s);
   return { local, abroad };
 }
+
+/**
+ * The picture to show with a story: the first outlet (best first) whose feed gave one over https,
+ * so the page never mixes in insecure content. The outlet is credited beside it.
+ */
+export function storyImage(story: Pick<StoryWithCoverage, "coverage">): { src: string; credit: string; href: string } | null {
+  const item = story.coverage.find((c) => c.imageUrl?.startsWith("https://"));
+  return item ? { src: item.imageUrl!, credit: item.outletName, href: item.url } : null;
+}

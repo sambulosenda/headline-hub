@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coverageStrip, coverageTimeline, originCounts, outletOrigin, splitByLocalCoverage } from "@/lib/coverage";
+import { coverageStrip, coverageTimeline, originCounts, outletOrigin, splitByLocalCoverage, storyImage } from "@/lib/coverage";
 
 const now = new Date("2026-10-30T12:00:00Z");
 const minsAgo = (m: number) => new Date(now.getTime() - m * 60_000);
@@ -76,5 +76,14 @@ describe("splitByLocalCoverage", () => {
     const { local, abroad } = splitByLocalCoverage([a, b, c], "zw");
     expect(local.map((s) => s.id)).toEqual([1, 3]);
     expect(abroad.map((s) => s.id)).toEqual([2]);
+  });
+});
+
+describe("storyImage", () => {
+  it("takes the first https image and credits its outlet", () => {
+    const withImage = (id: string, imageUrl: string | null) => ({ ...item(id, "uk", null), imageUrl });
+    const story = { coverage: [withImage("a", null), withImage("b", "http://x/1.jpg"), withImage("c", "https://x/2.jpg")] };
+    expect(storyImage(story)).toMatchObject({ src: "https://x/2.jpg", credit: "c" });
+    expect(storyImage({ coverage: [withImage("a", null)] })).toBeNull();
   });
 });

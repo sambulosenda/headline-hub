@@ -7,8 +7,9 @@ import type { StoryWithCoverage } from "@/lib/queries";
 import { findTopic } from "@/config/topics";
 import { COUNTRIES } from "@/config/countries";
 import { toggleOutletMute, toggleTopicMute } from "@/app/settings/actions";
-import { coverageStrip, originCounts, outletOrigin } from "@/lib/coverage";
+import { coverageStrip, originCounts, outletOrigin, storyImage } from "@/lib/coverage";
 import { CoverageStrip } from "./CoverageStrip";
+import { StoryImage } from "./StoryImage";
 import { SaveButton } from "./SaveButton";
 
 /** How many outlet names a row spells out before "and N more". */
@@ -153,22 +154,28 @@ export function LeadStory({
   const framings = story.coverage
     .filter((c) => c.outletId !== lead.outletId && !seen.has(c.title.toLowerCase()) && seen.add(c.title.toLowerCase()))
     .slice(0, LEAD_FRAMINGS);
+  const image = storyImage(story);
 
   return (
     <article className="pb-6">
-      <MetaLine parts={parts} />
-      <h2 className="mt-2 max-w-[20ch] text-[1.75rem] leading-[1.1] font-extrabold tracking-[-0.03em] text-balance sm:text-[2.625rem] sm:leading-[1.05]">
-        <a href={outboundUrl(lead.url)} data-outbound="1" className="hover:underline hover:decoration-2 hover:underline-offset-4" target="_blank" rel="noopener">
-          {story.title}
-        </a>
-      </h2>
-      {summary && <p className="mt-3 line-clamp-3 max-w-[60ch] text-[1.0625rem] leading-normal text-subtle">{summary}</p>}
-      <p className="mt-3 text-sm text-subtle">{parts.outlets}</p>
-      <div className="mt-1.5 flex items-center gap-3">
-        <CoverageLink story={story} parts={parts} />
-        <div className="-my-2 -mr-2 ml-auto flex shrink-0 items-center">
-          <SaveButton storyId={story.id} saved={saved} iconOnly />
-          <StoryMenu story={story} lead={lead} mutedTopics={mutedTopics} path={parts.path} />
+      <div className={image ? "grid gap-x-8 sm:grid-cols-[minmax(0,1fr)_minmax(0,40%)]" : undefined}>
+        {image && <StoryImage {...image} priority className="mb-4 sm:order-last sm:mb-0" />}
+        <div className="min-w-0">
+          <MetaLine parts={parts} />
+          <h2 className="mt-2 max-w-[20ch] text-[1.75rem] leading-[1.1] font-extrabold tracking-[-0.03em] text-balance sm:text-[2.625rem] sm:leading-[1.05]">
+            <a href={outboundUrl(lead.url)} data-outbound="1" className="hover:underline hover:decoration-2 hover:underline-offset-4" target="_blank" rel="noopener">
+              {story.title}
+            </a>
+          </h2>
+          {summary && <p className="mt-3 line-clamp-3 max-w-[60ch] text-[1.0625rem] leading-normal text-subtle">{summary}</p>}
+          <p className="mt-3 text-sm text-subtle">{parts.outlets}</p>
+          <div className="mt-1.5 flex items-center gap-3">
+            <CoverageLink story={story} parts={parts} />
+            <div className="-my-2 -mr-2 ml-auto flex shrink-0 items-center">
+              <SaveButton storyId={story.id} saved={saved} iconOnly />
+              <StoryMenu story={story} lead={lead} mutedTopics={mutedTopics} path={parts.path} />
+            </div>
+          </div>
         </div>
       </div>
       {framings.length > 0 && (
