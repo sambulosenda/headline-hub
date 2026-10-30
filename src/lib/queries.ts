@@ -72,6 +72,8 @@ export interface CoverageItem {
   publishedAt: Date;
   outletName: string;
   outletRegion: string;
+  /** The outlet's home country, for national outlets. */
+  outletCountry: string | null;
 }
 
 export interface StoryWithCoverage {
@@ -84,6 +86,8 @@ export interface StoryWithCoverage {
   firstSeenAt: Date;
   lastSeenAt: Date;
   topics: string[];
+  /** Countries the story is about (src/config/countries.ts). */
+  countries: string[];
   coverage: CoverageItem[];
 }
 
@@ -99,6 +103,7 @@ function coverageSelect() {
     publishedAt: articles.publishedAt,
     outletName: outlets.name,
     outletRegion: outlets.region,
+    outletCountry: outlets.country,
     quality: outlets.quality,
   };
 }

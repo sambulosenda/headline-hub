@@ -27,8 +27,10 @@ export function SearchBox({
         placeholder={compact ? "Search" : "Search headlines"}
         autoFocus={autoFocus}
         maxLength={200}
-        className={`w-full min-w-0 rounded-md border border-line bg-surface outline-none placeholder:text-muted focus:border-accent ${
-          compact ? "px-2.5 py-1 text-sm" : "px-3 py-2"
+        className={`w-full min-w-0 rounded-lg outline-none placeholder:text-muted ${
+          compact
+            ? "h-9 border border-transparent bg-fill px-3 text-sm focus:border-line-strong focus:bg-background"
+            : "h-12 border border-line-strong bg-background px-4 text-lg focus:border-foreground"
         }`}
       />
       {within && within !== "7d" && <input type="hidden" name="within" value={within} />}
