@@ -47,6 +47,12 @@ Signed-in readers can turn on a **daily digest** (top 10 stories, sent from `DIG
 
 Country pages (`/country/zw`, linked from the Africa tab) show stories about one country: local stories from that country's own outlets (the `country` field in `src/config/outlets.ts`; a story counts when those outlets make up at least half its coverage, so world news they also run does not), plus any article whose headline or summary names it, its capital, big cities or other unambiguous terms (`src/config/countries.ts`). Ingest tags new articles; after changing the country list or terms, or after first adding the migration, run `npm run tag-countries` once to re-tag everything.
 
+## Publisher feed submissions
+
+Publishers can offer their RSS or Atom feed at `/submit` (linked in the footer). Each submission is checked automatically: the address must be a public site (no private or internal addresses, checked on every redirect), the site's robots.txt must allow our crawler, and the feed must load, parse, and have at least 3 items with one from the last 7 days. Each email address can submit 3 feeds a day, and feeds we already carry or that were already submitted are refused.
+
+Signed-in accounts listed in `ADMIN_EMAILS` see the queue at `/admin/submissions` (everyone else gets a 404), with the check results and latest headlines. Approving a feed shows a ready-to-paste entry for `src/config/outlets.ts`; review its `kind` and `quality`, add it, then restart `ingest:watch`. Nothing is ingested until it is in the config. For local testing against a feed on your own machine, set `ALLOW_PRIVATE_FEEDS=1` to skip the public-address check.
+
 ## Scripts
 
 | Script | What it does |

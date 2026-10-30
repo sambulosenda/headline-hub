@@ -174,6 +174,27 @@ export const alertsSent = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.storyId] }), index("alerts_sent_user_idx").on(t.userId, t.sentAt)],
 );
 
+export const feedSubmissions = pgTable(
+  "feed_submissions",
+  {
+    id: serial("id").primaryKey(),
+    outletName: text("outlet_name").notNull(),
+    homepage: text("homepage").notNull(),
+    feedUrl: text("feed_url").notNull().unique(),
+    contactEmail: text("contact_email").notNull(),
+    region: text("region").notNull(),
+    topics: text("topics").array().notNull(),
+    notes: text("notes").notNull().default(""),
+    /** Automatic check results (src/lib/vet-feed.ts) and sample headlines. */
+    vetting: jsonb("vetting").notNull(),
+    /** pending (passed checks), failed_checks, approved or rejected. */
+    status: text("status").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  },
+  (t) => [index("feed_submissions_status_idx").on(t.status, t.createdAt), index("feed_submissions_contact_idx").on(t.contactEmail, t.createdAt)],
+);
+
 export type Outlet = typeof outlets.$inferSelect;
 export type Article = typeof articles.$inferSelect;
 export type Story = typeof stories.$inferSelect;

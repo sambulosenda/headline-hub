@@ -57,6 +57,13 @@
       "when": 1793318079716,
       "tag": "0007_outlet_country",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793318321176,
+      "tag": "0008_feed_submissions",
+      "breakpoints": true
     }
   ]
 }
