@@ -80,3 +80,17 @@ export function coverageTimeline(story: Pick<StoryWithCoverage, "countries" | "t
   }
   return entries;
 }
+
+/**
+ * Splits a country's stories into those its own newsrooms are covering and those only
+ * outlets elsewhere have picked up, keeping the ranking within each.
+ */
+export function splitByLocalCoverage<S extends Pick<StoryWithCoverage, "coverage">>(
+  stories: S[],
+  country: string,
+): { local: S[]; abroad: S[] } {
+  const local: S[] = [];
+  const abroad: S[] = [];
+  for (const s of stories) (s.coverage.some((c) => c.outletCountry === country) ? local : abroad).push(s);
+  return { local, abroad };
+}

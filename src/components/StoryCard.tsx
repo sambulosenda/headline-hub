@@ -24,14 +24,18 @@ export function StoryList({ children }: { children: React.ReactNode }) {
   return <div className="divide-y divide-line">{children}</div>;
 }
 
-/** The place a story is about if it has one, otherwise its first topic. */
-function storyLabel(story: StoryWithCoverage): string | undefined {
-  const country = COUNTRIES.find((c) => story.countries.includes(c.code));
-  return country?.name ?? (story.topics[0] && findTopic(story.topics[0])?.name);
+/**
+ * The place a story is about if it has one, otherwise its first topic. On a country's
+ * own page that country goes without saying, so the label falls through to the topic.
+ */
+function storyLabel(story: StoryWithCoverage, pageCountry?: string): string | undefined {
+  const country = COUNTRIES.find((c) => c.code !== pageCountry && story.countries.includes(c.code));
+  const topics = pageCountry ? story.topics.filter((t) => t !== "africa") : story.topics;
+  return country?.name ?? (topics[0] && findTopic(topics[0])?.name);
 }
 
 /** What every story presentation shows: label, outlets (local first) and coverage. */
-function storyParts(story: StoryWithCoverage) {
+function storyParts(story: StoryWithCoverage, pageCountry?: string) {
   // Local outlets lead the names, so a Zimbabwe story credits Zimbabwean papers first.
   const local = story.coverage.filter((c) => outletOrigin(c, story) === "local");
   const names = outletNames([...local, ...story.coverage]);
@@ -42,7 +46,7 @@ function storyParts(story: StoryWithCoverage) {
   const age = timeAgo(story.lastSeenAt);
   return {
     developing: story.recentOutlets >= 2,
-    label: storyLabel(story),
+    label: storyLabel(story, pageCountry),
     age: age === "just now" ? age : `${age} ago`,
     outlets: `${shown.join(", ")}${more > 0 ? ` and ${more} more` : ""}`,
     count,
@@ -91,14 +95,17 @@ export function StoryCard({
   story,
   mutedTopics = [],
   saved = false,
+  pageCountry,
 }: {
   story: StoryWithCoverage;
   mutedTopics?: string[];
   saved?: boolean;
+  /** The country page this card sits on, if any. */
+  pageCountry?: string;
 }) {
   const [lead] = story.coverage;
   if (!lead) return null;
-  const parts = storyParts(story);
+  const parts = storyParts(story, pageCountry);
 
   return (
     <article className="py-4">

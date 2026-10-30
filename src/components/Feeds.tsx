@@ -6,14 +6,15 @@ import { Suspense } from "react";
 import { LeadStory, StoryCard, StoryList } from "./StoryCard";
 import { outboundUrl } from "@/lib/normalize";
 import { parseFilters, timeAgo, withParam, type SearchParams } from "@/lib/filters";
-import { getLatest, getLatestArticleId, getTopStories, type FeedFilters } from "@/lib/queries";
+import { getLatest, getLatestArticleId, getNewsrooms, getTopStories, type FeedFilters, type StoryWithCoverage } from "@/lib/queries";
+import { splitByLocalCoverage } from "@/lib/coverage";
 import { storyPath } from "@/lib/slug";
 import { createHash } from "node:crypto";
 import { serializeMutes, type Mutes } from "@/lib/mutes";
 import { getMutes } from "@/lib/mutes-server";
 import { savedByCurrentUser } from "@/lib/saved";
 import { getTrending } from "@/lib/entities";
-import { COUNTRIES } from "@/config/countries";
+import { COUNTRIES, findCountry } from "@/config/countries";
 
 function mutesKey(mutes: Mutes) {
   return createHash("sha256").update(serializeMutes(mutes)).digest("hex").slice(0, 8);
@@ -133,6 +134,8 @@ export async function TopStories({
             </section>
           )}
         </>
+      ) : country ? (
+        <CountryLanes stories={stories} country={country} mutedTopics={filters.mutes.topics} saved={saved} />
       ) : (
         <StoryList>
           {stories.map((s) => (
@@ -144,6 +147,47 @@ export async function TopStories({
       <Suspense fallback={null}>
         <Rail filters={filters} latestHref={latestHref} developingHref={developingHref} showDeveloping={!developing} front={front} />
       </Suspense>
+    </div>
+  );
+}
+
+const laneHeading = "border-b-2 border-foreground pb-2.5 text-[0.9375rem] font-bold";
+
+/**
+ * A country page leads with what its own newsrooms are reporting, then the stories
+ * about it that only outlets elsewhere have picked up.
+ */
+function CountryLanes({
+  stories,
+  country,
+  mutedTopics,
+  saved,
+}: {
+  stories: StoryWithCoverage[];
+  country: string;
+  mutedTopics: string[];
+  saved: Set<number>;
+}) {
+  const name = findCountry(country)?.name ?? country.toUpperCase();
+  const { local, abroad } = splitByLocalCoverage(stories, country);
+  const lanes = [
+    { id: "lane-local", title: `From ${name}'s newsrooms`, stories: local },
+    { id: "lane-abroad", title: `${name} in the foreign press`, stories: abroad },
+  ].filter((l) => l.stories.length > 0);
+  return (
+    <div className="space-y-8">
+      {lanes.map((lane) => (
+        <section key={lane.id} aria-labelledby={lane.id}>
+          <h2 id={lane.id} className={laneHeading}>
+            {lane.title}
+          </h2>
+          <StoryList>
+            {lane.stories.map((s) => (
+              <StoryCard key={s.id} story={s} mutedTopics={mutedTopics} saved={saved.has(s.id)} pageCountry={country} />
+            ))}
+          </StoryList>
+        </section>
+      ))}
     </div>
   );
 }
@@ -173,9 +217,9 @@ async function Rail({
   showDeveloping: boolean;
   front: boolean;
 }) {
-  let latest, developing, africa, names;
+  let latest, developing, africa, names, newsrooms;
   try {
-    [latest, developing, africa, names] = await Promise.all([
+    [latest, developing, africa, names, newsrooms] = await Promise.all([
       // Fetch extra so there are still enough after keeping one headline per story.
       getLatest(filters, (front ? RAIL_LATEST_FRONT : RAIL_LATEST) * 3).then((items) =>
         onePerStory(items).slice(0, front ? RAIL_LATEST_FRONT : RAIL_LATEST),
@@ -183,6 +227,7 @@ async function Rail({
       showDeveloping ? getTopStories({ ...filters, developing: true }, RAIL_DEVELOPING) : [],
       front ? getTopStories({ ...filters, topic: "africa" }, RAIL_AFRICA) : [],
       front ? getTrending(RAIL_NAMES).catch(() => []) : [],
+      filters.country ? getNewsrooms(filters.country) : [],
     ]);
   } catch (err) {
     console.error(err);
@@ -263,6 +308,24 @@ async function Rail({
                   {n.name}
                 </Link>
                 <span className="font-mono text-xs tabular-nums text-muted">{n.outlets}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {newsrooms.length > 0 && (
+        <section>
+          <h2 className={heading}>
+            <span>Newsrooms we read</span>
+            <span className="text-[0.8125rem] font-medium text-muted">Last 24h</span>
+          </h2>
+          <ul className="text-sm">
+            {newsrooms.map((n) => (
+              <li key={n.id} className="flex justify-between gap-3 border-b border-line py-2">
+                <a href={n.homepage} className="truncate hover:underline" target="_blank" rel="noopener">
+                  {n.name}
+                </a>
+                <span className="font-mono text-xs tabular-nums text-muted">{n.recent}</span>
               </li>
             ))}
           </ul>
