@@ -10,6 +10,7 @@ import { MentionsChart } from "@/components/MentionsChart";
 import { ENTITIES, KIND_LABELS } from "@/config/entities";
 import { resolveEntity, type EntityRef } from "@/lib/entities";
 import { getMutes } from "@/lib/mutes-server";
+import { pageMetadata } from "@/lib/seo";
 import { getMentionStats } from "@/lib/queries";
 
 export function generateStaticParams() {
@@ -18,8 +19,19 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/entity/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const listed = ENTITIES.find((e) => e.slug === slug);
-  return { title: listed ? `${listed.name} news` : "In the news" };
+  let entity;
+  try {
+    entity = await resolveEntity(slug);
+  } catch (err) {
+    console.error(err);
+  }
+  if (!entity) return { title: "In the news" };
+  return pageMetadata({
+    title: `${entity.name} news`,
+    description: `The latest stories on ${entity.name} from every outlet, grouped by story, with who is writing about them most.`,
+    path: `/entity/${entity.slug}`,
+    ownCard: true,
+  });
 }
 
 /** A week of mentions beside the outlets writing about them most. */

@@ -5,6 +5,7 @@ import { FeedHeader } from "@/components/FeedHeader";
 import { CountryChips } from "@/components/CountryChips";
 import { FeedSkeleton, LatestHeadlines, TopStories } from "@/components/Feeds";
 import { COUNTRIES, findCountry } from "@/config/countries";
+import { pageMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return COUNTRIES.map((c) => ({ code: c.code }));
@@ -12,7 +13,13 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/country/[code]">): Promise<Metadata> {
   const country = findCountry((await params).code);
-  return { title: country ? `${country.name} news` : "Country" };
+  if (!country) return { title: "Country" };
+  return pageMetadata({
+    title: `${country.name} news`,
+    description: `${country.name} news from its own newsrooms first, then what the rest of the world is saying. Every outlet's headlines, grouped by story.`,
+    path: `/country/${country.code}`,
+    ownCard: true,
+  });
 }
 
 async function CountryFeed({ params, searchParams }: PageProps<"/country/[code]">) {

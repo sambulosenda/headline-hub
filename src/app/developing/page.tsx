@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FeedSkeleton, TopStories } from "@/components/Feeds";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Developing",
-  description: "Stories other outlets are picking up right now.",
-};
+  description: "Stories other outlets are picking up right now, fastest-growing first.",
+  path: "/developing",
+});
 
 export default function Developing({ searchParams }: PageProps<"/developing">) {
   return (

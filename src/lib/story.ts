@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getDb } from "@/db/client";
 import { stories } from "@/db/schema";
 import { loadCoverage, type StoryWithCoverage } from "./queries";
+import { SITE_NAME } from "./site";
 
 /**
  * One story with all its coverage, loaded once per request (the page and its
@@ -23,7 +24,7 @@ export function outletNames(story: StoryWithCoverage): string[] {
 
 /** One-line summary for link previews, e.g. "Covered by BBC News, Reuters and 3 more outlets." */
 export function coverageLine(names: string[], max = 3): string {
-  if (names.length === 0) return "Every outlet's take, grouped on Headline Hub.";
+  if (names.length === 0) return `Every outlet's take, grouped on ${SITE_NAME}.`;
   if (names.length === 1) return `Covered by ${names[0]}.`;
   if (names.length <= max) return `Covered by ${names.slice(0, -1).join(", ")} and ${names.at(-1)}.`;
   const rest = names.length - max;

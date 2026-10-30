@@ -1,9 +1,32 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { FeedSkeleton, TopStories } from "@/components/Feeds";
 import { NameChips } from "@/components/NameChips";
 import { getTrending } from "@/lib/entities";
+import { pageMetadata } from "@/lib/seo";
+import { absoluteUrl, SITE } from "@/lib/site";
+
+export const metadata: Metadata = {
+  ...pageMetadata({ title: SITE.name, description: SITE.description, path: "/" }),
+  title: { absolute: `${SITE.name}: every outlet's take on today's news` },
+};
+
+/** Lets search engines show a search box for the site and name it correctly. */
+function websiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE.name,
+    url: absoluteUrl("/"),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${absoluteUrl("/search")}?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
 
 async function InTheNews() {
   await connection();
@@ -26,6 +49,11 @@ export default function Home({ searchParams }: PageProps<"/">) {
     <>
       {/* The lead story's headline is the visual top of the page. */}
       <h1 className="sr-only">Top stories</h1>
+      <script
+        type="application/ld+json"
+        // Escape "<" so no value can close the script tag early.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()).replace(/</g, "\\u003c") }}
+      />
       <Suspense fallback={null}>
         <InTheNews />
       </Suspense>

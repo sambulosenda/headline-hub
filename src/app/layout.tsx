@@ -5,7 +5,7 @@ import { IBM_Plex_Mono, Schibsted_Grotesk } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TabBar } from "@/components/TabBar";
-import { SITE_NAME, siteUrl } from "@/lib/site";
+import { SITE, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 // Drawn for a news publisher; holds up at headline sizes and in dense 13px lists.
@@ -13,13 +13,12 @@ const sans = Schibsted_Grotesk({ variable: "--font-sans-face", subsets: ["latin"
 // Only for clock times, so they line up in lists.
 const mono = IBM_Plex_Mono({ variable: "--font-mono-face", subsets: ["latin"], weight: ["400", "500"] });
 
-const description = "Every outlet's take on today's stories, grouped and ranked in the open.";
-
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
-  title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
-  description,
-  openGraph: { siteName: SITE_NAME, type: "website", title: SITE_NAME, description },
+  title: { default: SITE.name, template: `%s · ${SITE.name}` },
+  description: SITE.description,
+  applicationName: SITE.name,
+  openGraph: { siteName: SITE.name, type: "website", title: SITE.name, description: SITE.description },
   twitter: { card: "summary_large_image" },
 };
 
@@ -36,6 +35,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Publish news? Submit your feed
           </Link>
           . We count visits without cookies and don&apos;t store IP addresses.
+          <nav aria-label="About this site" className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            <Link href="/publishers" className="hover:text-foreground">
+              For publishers
+            </Link>
+            <Link href="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            <Link href="/contact" className="hover:text-foreground">
+              Contact
+            </Link>
+          </nav>
         </footer>
         <TabBar />
         <Suspense fallback={null}>

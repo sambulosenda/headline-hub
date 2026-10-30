@@ -4,11 +4,13 @@ import { Suspense } from "react";
 import { NameChips } from "@/components/NameChips";
 import { ENTITIES, KIND_LABELS, type EntityKind } from "@/config/entities";
 import { getTrending } from "@/lib/entities";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "People, clubs and companies",
   description: "Follow the people, clubs, companies and places in the news.",
-};
+  path: "/entities",
+});
 
 async function Trending() {
   await connection();

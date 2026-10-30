@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { SubmitForm } from "./SubmitForm";
 
-export const metadata: Metadata = { title: "Submit your feed" };
+export const metadata: Metadata = pageMetadata({
+  title: "Submit your feed",
+  description: "Publish original news? Send us your RSS or Atom feed and we'll link your headlines straight to your site.",
+  path: "/submit",
+});
 
 export default function SubmitPage() {
   return (

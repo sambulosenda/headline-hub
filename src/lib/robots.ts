@@ -1,5 +1,8 @@
-export const BOT_NAME = "HeadlineHubBot";
-export const USER_AGENT = `${BOT_NAME}/0.1 (+https://github.com/sambulosenda/headline-hub)`;
+import { SITE } from "./site";
+
+export const BOT_NAME = SITE.botName;
+/** Points at the page that explains the bot and how to opt out. */
+export const USER_AGENT = `${BOT_NAME}/0.1 (+${SITE.url}/publishers)`;
 
 /**
  * Minimal robots.txt check: uses the group for our bot if present, otherwise

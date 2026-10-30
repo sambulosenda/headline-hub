@@ -94,9 +94,14 @@ export default function SubmissionsPage() {
     <>
       <div className="mb-4 flex items-baseline justify-between gap-2">
         <h1 className="text-2xl font-bold">Feed submissions</h1>
-        <Link href="/admin/analytics" className="text-sm text-accent hover:underline">
-          Analytics
-        </Link>
+        <span className="flex gap-4 text-sm">
+          <Link href="/admin/messages" className="text-accent hover:underline">
+            Messages
+          </Link>
+          <Link href="/admin/analytics" className="text-accent hover:underline">
+            Analytics
+          </Link>
+        </span>
       </div>
       <Suspense fallback={<div className="h-40 animate-pulse rounded-xl border border-line bg-surface" />}>
         <Queue />

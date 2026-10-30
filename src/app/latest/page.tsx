@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FeedSkeleton, LatestHeadlines } from "@/components/Feeds";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Latest" };
+export const metadata: Metadata = pageMetadata({
+  title: "Latest",
+  description: "Every new headline from every outlet we follow, newest first.",
+  path: "/latest",
+});
 
 export default function Latest({ searchParams }: PageProps<"/latest">) {
   return (

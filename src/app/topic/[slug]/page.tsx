@@ -5,6 +5,7 @@ import { FeedHeader } from "@/components/FeedHeader";
 import { CountryChips } from "@/components/CountryChips";
 import { FeedSkeleton, LatestHeadlines, TopStories } from "@/components/Feeds";
 import { TOPICS, findTopic } from "@/config/topics";
+import { pageMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return TOPICS.map((t) => ({ slug: t.slug }));
@@ -12,7 +13,13 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/topic/[slug]">): Promise<Metadata> {
   const topic = findTopic((await params).slug);
-  return { title: topic ? `${topic.name} news` : "Topic" };
+  if (!topic) return { title: "Topic" };
+  return pageMetadata({
+    title: `${topic.name} news`,
+    description: `Today's ${topic.name} stories from every outlet, grouped so you can see who is covering what.`,
+    path: `/topic/${topic.slug}`,
+    ownCard: true,
+  });
 }
 
 async function TopicFeed({ params, searchParams }: PageProps<"/topic/[slug]">) {

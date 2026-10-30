@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { unsubscribe } from "@/app/settings/email-actions";
+import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Unsubscribe", robots: { index: false }, referrer: "no-referrer" };
 
@@ -51,7 +52,7 @@ async function Unsubscribe({ searchParams }: { searchParams: PageProps<"/unsubsc
 export default function UnsubscribePage(props: PageProps<"/unsubscribe">) {
   return (
     <div className="max-w-md">
-      <h1 className="mb-4 text-2xl font-bold">Email from Headline Hub</h1>
+      <h1 className="mb-4 text-2xl font-bold">Email from {SITE_NAME}</h1>
       <Suspense fallback={<div className="h-28 animate-pulse rounded-xl border border-line bg-surface" />}>
         <Unsubscribe searchParams={props.searchParams} />
       </Suspense>
