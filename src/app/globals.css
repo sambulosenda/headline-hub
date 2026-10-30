@@ -1,28 +1,44 @@
 @import "tailwindcss";
 
+/*
+ * Type-led and quiet: white page, ink text, one green accent for actions and local outlets,
+ * red only for Developing. The coverage strip's greys are used nowhere else.
+ */
 :root {
-  --background: #f7f7f5;
-  --foreground: #1a1a1a;
+  --background: #ffffff;
+  --foreground: #111416;
   --surface: #ffffff;
-  --line: #e4e4df;
-  --muted: #62625d;
-  --accent: #1f5fd1;
-  --accent-soft: #e7eefb;
-  --warn: #9a5b00;
-  --warn-soft: #fbf0dd;
+  --fill: #f4f5f4;
+  --line: #e6e8e7;
+  --line-strong: #d3d7d5;
+  --subtle: #4a5157;
+  --muted: #6b7278;
+  --accent: #0b6b4b;
+  --accent-soft: #e6f1ec;
+  --on-accent: #ffffff;
+  --warn: #c8321f;
+  --warn-soft: #fbe9e6;
+  --cov-regional: #9aa3a9;
+  --cov-international: #c7cdd1;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #121212;
-    --foreground: #ececea;
-    --surface: #1b1b1b;
-    --line: #2e2e2c;
-    --muted: #a3a39d;
-    --accent: #7aa7ff;
-    --accent-soft: #1c2a45;
-    --warn: #f0b45c;
-    --warn-soft: #3a2b12;
+    --background: #111315;
+    --foreground: #eceeef;
+    --surface: #1a1d20;
+    --fill: #1a1d20;
+    --line: #25292d;
+    --line-strong: #353a3f;
+    --subtle: #b4bac0;
+    --muted: #8d949a;
+    --accent: #4cc497;
+    --accent-soft: #13302a;
+    --on-accent: #06140f;
+    --warn: #ff6b57;
+    --warn-soft: #3a1c17;
+    --cov-regional: #7d868d;
+    --cov-international: #4e555b;
   }
 }
 
@@ -30,17 +46,24 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-fill: var(--fill);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-subtle: var(--subtle);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
-  --font-sans: var(--font-geist-sans);
+  --color-cov-regional: var(--cov-regional);
+  --color-cov-international: var(--cov-international);
+  --font-sans: var(--font-sans-face);
+  --font-mono: var(--font-mono-face);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-sans-face), "Helvetica Neue", Arial, system-ui, sans-serif;
 }

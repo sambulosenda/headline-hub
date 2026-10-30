@@ -14,22 +14,20 @@ export function EntityButtons({ entity, mutes }: { entity: EntityRef; mutes: Mut
   const following = mutes.follows.includes(entity.slug);
   const muted = isEntityMuted(entity, mutes);
   return (
-    <div className="flex flex-wrap gap-2 text-sm">
+    <div className="flex flex-wrap items-center gap-2 text-sm">
       <form action={toggleFollow.bind(null, entity.slug)}>
         <button
           type="submit"
           aria-pressed={following}
-          className={
-            following
-              ? "rounded-full border border-accent bg-accent-soft px-3 py-1 font-medium text-accent"
-              : "rounded-full bg-accent px-3 py-1 font-medium text-white dark:text-black"
-          }
+          className={`h-9 rounded-md px-4 font-medium ${
+            following ? "border border-line-strong text-foreground hover:border-foreground" : "bg-accent text-on-accent hover:opacity-90"
+          }`}
         >
           {following ? "Following" : "Follow"}
         </button>
       </form>
       <form action={toggleEntityMute.bind(null, entity.slug)}>
-        <button type="submit" aria-pressed={muted} className="rounded-full border border-line px-3 py-1 hover:border-accent">
+        <button type="submit" aria-pressed={muted} className="h-9 px-2 text-muted hover:text-foreground">
           {muted ? "Unmute" : "Mute"}
         </button>
       </form>

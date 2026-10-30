@@ -16,9 +16,10 @@ function story(overrides: Partial<StoryWithCoverage> = {}): StoryWithCoverage {
     firstSeenAt: hoursAgo(1),
     lastSeenAt: hoursAgo(0.1),
     topics: ["business"],
+    countries: [],
     coverage: [
-      { id: 1, outletId: "bbc", url: "https://bbc.co.uk/x", title: "t", summary: "", imageUrl: null, publishedAt: now, outletName: "BBC News", outletRegion: "uk" },
-      { id: 2, outletId: "ft", url: "https://ft.com/x", title: "t", summary: "", imageUrl: null, publishedAt: now, outletName: "Financial Times", outletRegion: "uk" },
+      { id: 1, outletId: "bbc", url: "https://bbc.co.uk/x", title: "t", summary: "", imageUrl: null, publishedAt: now, outletName: "BBC News", outletRegion: "uk", outletCountry: null },
+      { id: 2, outletId: "ft", url: "https://ft.com/x", title: "t", summary: "", imageUrl: null, publishedAt: now, outletName: "Financial Times", outletRegion: "uk", outletCountry: null },
     ],
     ...overrides,
   };

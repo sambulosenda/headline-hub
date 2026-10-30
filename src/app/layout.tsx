@@ -1,16 +1,17 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Geist } from "next/font/google";
+import { IBM_Plex_Mono, Schibsted_Grotesk } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
 import { SiteHeader } from "@/components/SiteHeader";
+import { TabBar } from "@/components/TabBar";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// Drawn for a news publisher; holds up at headline sizes and in dense 13px lists.
+const sans = Schibsted_Grotesk({ variable: "--font-sans-face", subsets: ["latin"] });
+// Only for clock times, so they line up in lists.
+const mono = IBM_Plex_Mono({ variable: "--font-mono-face", subsets: ["latin"], weight: ["400", "500"] });
 
 const description = "Every outlet's take on today's stories, grouped and ranked in the open.";
 
@@ -24,17 +25,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+    <html lang="en" className={`${sans.variable} ${mono.variable} h-full antialiased`}>
+      {/* Feed pages mark themselves data-wide, and the header, page and footer widen to fit the side column. */}
+      <body className="group/body flex min-h-full flex-col">
         <SiteHeader />
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">{children}</main>
-        <footer className="mx-auto w-full max-w-3xl px-4 py-8 text-xs text-muted">
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 lg:group-has-[[data-wide]]/body:max-w-6xl">{children}</main>
+        <footer className="mx-auto w-full max-w-3xl px-4 py-8 text-xs text-muted lg:group-has-[[data-wide]]/body:max-w-6xl">
           Headlines and links come from publishers&apos; own RSS feeds. Every link goes straight to the publisher.{" "}
           <Link href="/submit" className="underline hover:text-foreground">
             Publish news? Submit your feed
           </Link>
           . We count visits without cookies and don&apos;t store IP addresses.
         </footer>
+        <TabBar />
         <Suspense fallback={null}>
           <Analytics />
         </Suspense>

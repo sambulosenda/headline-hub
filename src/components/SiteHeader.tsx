@@ -1,75 +1,85 @@
 import Link from "next/link";
 import { TOPICS } from "@/config/topics";
+import { NavLink } from "./NavLink";
 import { SearchBox } from "./SearchBox";
+
+/** Path prefixes that belong under a topic tab, e.g. country pages sit under Africa. */
+const TOPIC_ALSO: Record<string, string[]> = { africa: ["/country/"] };
+
+const view = "text-subtle hover:text-foreground";
+const viewActive = "!text-foreground font-semibold";
+const tab = "flex shrink-0 items-center border-b-2 border-transparent text-subtle hover:text-foreground";
+const tabActive = "!border-foreground font-semibold !text-foreground";
+const pinned = "flex shrink-0 items-center border-b-2 border-transparent font-semibold text-accent";
+
+function Icon({ children }: { children: React.ReactNode }) {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {children}
+    </svg>
+  );
+}
+
+const iconLink = "flex size-9 items-center justify-center rounded-lg text-subtle hover:bg-fill hover:text-foreground";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-10 border-b border-line bg-background/90 backdrop-blur">
-      <div className="mx-auto max-w-3xl px-4">
-        <div className="flex h-14 items-center justify-between gap-4">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            Headline<span className="text-accent">Hub</span>
+    <header className="sticky top-0 z-30 border-b border-line bg-background">
+      <div className="mx-auto max-w-3xl px-4 lg:group-has-[[data-wide]]/body:max-w-6xl">
+        <div className="flex h-13 items-center gap-7 sm:h-15">
+          <Link href="/" className="text-lg font-extrabold tracking-[-0.03em] whitespace-nowrap">
+            Headline Hub
           </Link>
-          <SearchBox compact className="ml-auto w-full max-w-56" />
-          <nav className="flex shrink-0 items-center gap-4 text-sm" aria-label="Views">
-            <Link href="/" className="hover:text-accent">
+          {/* Phones get these from the tab bar at the bottom of the screen. */}
+          <nav className="hidden items-center gap-5 text-sm font-medium sm:flex" aria-label="Views">
+            <NavLink href="/" className={view} activeClassName={viewActive}>
               Top
-            </Link>
-            <Link href="/latest" className="hover:text-accent">
+            </NavLink>
+            <NavLink href="/latest" className={view} activeClassName={viewActive}>
               Latest
-            </Link>
-            <Link href="/developing" className="hidden hover:text-accent sm:inline">
+            </NavLink>
+            <NavLink href="/developing" className={view} activeClassName={viewActive}>
               Developing
-            </Link>
-            <Link href="/following" aria-label="Following" title="Following" className="hidden hover:text-accent sm:inline">
-              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-                <path d="M10 3l2.1 4.3 4.7.7-3.4 3.3.8 4.7-4.2-2.2-4.2 2.2.8-4.7L3.2 8l4.7-.7z" strokeLinejoin="round" />
-              </svg>
-            </Link>
-            <Link href="/saved" aria-label="Saved stories" title="Saved stories" className="hover:text-accent">
-              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-                <path d="M5.5 3.5h9v13l-4.5-3-4.5 3z" strokeLinejoin="round" />
-              </svg>
-            </Link>
-            <Link href="/settings" aria-label="Customise your feed" title="Customise your feed" className="hover:text-accent">
-              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-                <path d="M3 5h9M15 5h2M3 10h3M9 10h8M3 15h9M15 15h2" strokeLinecap="round" />
+            </NavLink>
+            <NavLink href="/following" className={view} activeClassName={viewActive}>
+              Following
+            </NavLink>
+          </nav>
+          <SearchBox compact className="ml-auto hidden w-full max-w-64 sm:flex" />
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:ml-0">
+            <NavLink href="/saved" aria-label="Saved stories" title="Saved stories" className={`hidden sm:flex ${iconLink}`} activeClassName="!text-accent">
+              <Icon>
+                <path d="M5.5 3.5h9v13l-4.5-3-4.5 3z" />
+              </Icon>
+            </NavLink>
+            <NavLink href="/settings" aria-label="Customise your feed" title="Customise your feed" className={iconLink} activeClassName="!text-accent">
+              <Icon>
+                <path d="M3 5h9M15 5h2M3 10h3M9 10h8M3 15h9M15 15h2" />
                 <circle cx="13.5" cy="5" r="1.5" />
                 <circle cx="7.5" cy="10" r="1.5" />
                 <circle cx="13.5" cy="15" r="1.5" />
-              </svg>
-            </Link>
-          </nav>
+              </Icon>
+            </NavLink>
+          </div>
         </div>
-        <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-2 text-sm" aria-label="Topics">
-          {/* No room for this beside the search box on phones, so it leads the topic row there. */}
-          <Link
-            href="/developing"
-            className="shrink-0 rounded-md px-2.5 py-1 font-medium text-warn hover:bg-surface sm:hidden"
-          >
+        <nav className="-mx-4 flex h-10 gap-5 overflow-x-auto px-4 text-sm [scrollbar-width:none]" aria-label="Topics">
+          {/* Developing has no tab of its own on phones, so it leads the topic row there. */}
+          <NavLink href="/developing" className={`font-medium !text-warn sm:hidden ${tab}`} activeClassName={tabActive}>
             Developing
-          </Link>
-          <Link
-            href="/following"
-            className="shrink-0 rounded-md px-2.5 py-1 text-muted hover:bg-surface hover:text-foreground sm:hidden"
-          >
-            Following
-          </Link>
+          </NavLink>
           {TOPICS.map((t) => (
-            <Link
-              key={t.slug}
-              href={`/topic/${t.slug}`}
-              className="shrink-0 rounded-md px-2.5 py-1 text-muted hover:bg-surface hover:text-foreground"
-            >
+            <NavLink key={t.slug} href={`/topic/${t.slug}`} also={TOPIC_ALSO[t.slug]} className={tab} activeClassName={tabActive}>
               {t.name}
-            </Link>
+            </NavLink>
           ))}
-          <Link
-            href="/entities"
-            className="shrink-0 rounded-md px-2.5 py-1 text-muted hover:bg-surface hover:text-foreground"
-          >
+          <span className="my-3 w-px shrink-0 bg-line" aria-hidden />
+          {/* Zimbabwe is our home market, so it's pinned for everyone until pins come from Following. */}
+          <NavLink href="/country/zw" className={pinned} activeClassName="!border-foreground">
+            Zimbabwe
+          </NavLink>
+          <NavLink href="/entities" also={["/entity/"]} className={tab} activeClassName={tabActive}>
             People &amp; clubs
-          </Link>
+          </NavLink>
         </nav>
       </div>
     </header>

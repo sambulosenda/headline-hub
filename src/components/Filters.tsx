@@ -7,9 +7,7 @@ function Chip({ href, active, children }: { href: string; active: boolean; child
     <Link
       href={href}
       aria-current={active ? "true" : undefined}
-      className={`rounded-full border px-3 py-1 text-sm ${
-        active ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:text-foreground"
-      }`}
+      className={`flex min-h-9 shrink-0 items-center text-sm ${active ? "font-semibold text-foreground" : "text-muted hover:text-foreground"}`}
     >
       {children}
     </Link>
@@ -28,7 +26,7 @@ export function Filters({
   showHours?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Filters">
+    <div className="-mx-4 flex gap-4 overflow-x-auto px-4 [scrollbar-width:none]" role="group" aria-label="Filters">
       {showHours &&
         HOUR_OPTIONS.map((o) => (
           <Chip
@@ -39,7 +37,7 @@ export function Filters({
             {o.label}
           </Chip>
         ))}
-      {showHours && <span className="mx-1 w-px bg-line" aria-hidden />}
+      {showHours && <span className="my-2 w-px shrink-0 bg-line" aria-hidden />}
       {REGION_OPTIONS.map((o) => (
         <Chip key={o.label} href={withParam(pathname, params, "region", o.value)} active={filters.region === o.value}>
           {o.label}
