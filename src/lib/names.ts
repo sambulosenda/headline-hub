@@ -121,7 +121,8 @@ export function countNames(headlines: Headline[]): NameCount[] {
       listed.set(entity.slug, entry);
     }
     for (const name of new Set(candidateNames(title))) {
-      const key = name.toLowerCase();
+      // Group by slug, the table's key, so "O’Neill" and "O'Neill" count as one name.
+      const key = entitySlug(name) || name.toLowerCase();
       const entry = spotted.get(key) ?? { outlets: new Set(), articles: 0, forms: new Map() };
       entry.outlets.add(outletId);
       entry.articles++;

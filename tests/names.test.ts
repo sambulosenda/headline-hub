@@ -53,6 +53,17 @@ describe("countNames", () => {
     );
     expect(counts.map((c) => c.slug)).toEqual(["keir-starmer"]);
   });
+
+  it("merges spellings that share a slug, like curly and straight apostrophes", () => {
+    const counts = countNames([
+      h("Michelle O’Neill meets Taoiseach", "bbc"),
+      h("Michelle O’Neill: what she said", "guardian"),
+      h("Michelle O'Neill visits Derry", "sky"),
+      h("Michelle O'Neill responds", "itv"),
+      h("Michelle O'Neill on Stormont", "rte"),
+    ]);
+    expect(counts).toEqual([{ slug: "michelle-o-neill", name: "Michelle O'Neill", kind: "auto", outlets: 5, articles: 5 }]);
+  });
 });
 
 describe("entity config", () => {
