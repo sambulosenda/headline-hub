@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TOPICS } from "@/config/topics";
 import { NavLink } from "./NavLink";
+import { SITE_NAME } from "@/lib/site";
 import { SearchBox } from "./SearchBox";
 
 /** Path prefixes that belong under a topic tab, e.g. country pages sit under Africa. */
@@ -28,7 +29,7 @@ export function SiteHeader() {
       <div className="mx-auto max-w-3xl px-4 lg:group-has-[[data-wide]]/body:max-w-6xl">
         <div className="flex h-13 items-center gap-7 sm:h-15">
           <Link href="/" className="text-lg font-extrabold tracking-[-0.03em] whitespace-nowrap">
-            Headline Hub
+            {SITE_NAME}
           </Link>
           {/* Phones get these from the tab bar at the bottom of the screen. */}
           <nav className="hidden items-center gap-5 text-sm font-medium sm:flex" aria-label="Views">

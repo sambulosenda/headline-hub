@@ -247,3 +247,27 @@ export const trendingNames = pgTable(
   },
   (t) => [index("trending_names_seen_idx").on(t.lastSeenAt)],
 );
+
+/**
+ * Messages sent through /contact: takedown and correction requests from
+ * publishers, privacy requests and anything else. Reviewed on /admin/messages.
+ */
+export const contactMessages = pgTable(
+  "contact_messages",
+  {
+    id: serial("id").primaryKey(),
+    /** takedown, correction, privacy, feed or other (src/lib/contact.ts). */
+    reason: text("reason").notNull(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    organisation: text("organisation").notNull().default(""),
+    /** The page on our site or the publisher's article the message is about. */
+    url: text("url").notNull().default(""),
+    message: text("message").notNull(),
+    /** open or done. */
+    status: text("status").notNull().default("open"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    handledAt: timestamp("handled_at", { withTimezone: true }),
+  },
+  (t) => [index("contact_messages_status_idx").on(t.status, t.createdAt), index("contact_messages_email_idx").on(t.email, t.createdAt)],
+);

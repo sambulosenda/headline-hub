@@ -85,6 +85,13 @@
       "when": 1793354544192,
       "tag": "0011_article_embedding_model",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793371957023,
+      "tag": "0012_contact_messages",
+      "breakpoints": true
     }
   ]
 }

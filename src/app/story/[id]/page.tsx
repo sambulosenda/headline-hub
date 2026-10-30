@@ -286,6 +286,11 @@ async function StoryView({ params, searchParams }: PageProps<"/story/[id]">) {
               </ul>
             </section>
           )}
+          <p className="text-[0.8125rem] text-muted">
+            <Link href={`/contact?about=correction&url=${encodeURIComponent(path)}`} className="hover:text-foreground">
+              Report a problem with this story
+            </Link>
+          </p>
         </aside>
       </div>
     </div>

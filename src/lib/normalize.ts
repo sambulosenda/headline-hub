@@ -1,3 +1,5 @@
+import { SITE } from "./site";
+
 const TRACKING_PARAMS = /^(utm_|fbclid$|gclid$|mc_cid$|mc_eid$|ocid$|cmpid$|at_medium$|at_campaign$|CMP$)/i;
 
 /** Canonical form of an article URL, used as the dedupe key. */
@@ -57,11 +59,14 @@ export function cleanText(raw: string | undefined | null, maxLength = 280): stri
   return `${cut.slice(0, lastSpace > maxLength * 0.6 ? lastSpace : maxLength).trimEnd()}…`;
 }
 
+/** How publishers see us in their analytics, e.g. "headlinehub". */
+export const UTM_SOURCE = SITE.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
 /** Outbound link straight to the publisher, tagged so they can see our traffic. */
 export function outboundUrl(url: string): string {
   try {
     const u = new URL(url);
-    u.searchParams.set("utm_source", "headlinehub");
+    u.searchParams.set("utm_source", UTM_SOURCE);
     u.searchParams.set("utm_medium", "referral");
     return u.toString();
   } catch {
