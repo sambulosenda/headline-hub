@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, isNull, lt, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
@@ -14,49 +14,70 @@ type Db = ReturnType<typeof getDb>;
 const FEED_INTERVAL_MS = 5 * 60_000;
 const CLUSTER_WINDOW_MS = 48 * 3_600_000;
 const RESCORE_WINDOW_MS = 72 * 3_600_000;
-const CONCURRENCY = 4;
+const RESCORE_BATCH = 500;
+/** Sites fetched at once. Each site's own feeds are fetched one after another, so no publisher sees parallel requests. */
+const CONCURRENCY = 16;
 const FETCH_TIMEOUT_MS = 15_000;
+/** A failing feed waits 2^failures fetch intervals before its next try, up to this many doublings (about 5 hours). */
+const MAX_BACKOFF_DOUBLINGS = 6;
+const ROBOTS_TTL_MS = 6 * 3_600_000;
+/** Reload clustering candidates from scratch this often, so recluster runs and pruning are picked up. */
+const CANDIDATE_REFRESH_MS = 15 * 60_000;
 
-/** Upsert outlets and feeds from config; deactivate anything removed from it. */
+/** Upsert outlets and feeds from config in two statements; deactivate anything removed from it. */
 export async function syncConfig(db: Db) {
   const outletIds = OUTLETS.map((o) => o.id);
   const feedUrls = OUTLETS.flatMap((o) => o.feeds.map((f) => f.url));
-  for (const o of OUTLETS) {
-    const row = {
-      name: o.name,
-      homepage: o.homepage,
-      region: o.region,
-      kind: o.kind,
-      quality: o.quality,
-      country: o.country ?? null,
-      active: true,
-    };
-    await db.insert(outlets).values({ id: o.id, ...row }).onConflictDoUpdate({ target: outlets.id, set: row });
-    for (const f of o.feeds) {
-      await db
-        .insert(feeds)
-        .values({ url: f.url, outletId: o.id, topics: f.topics })
-        .onConflictDoUpdate({ target: feeds.url, set: { outletId: o.id, topics: f.topics, active: true } });
-    }
-  }
+  await db
+    .insert(outlets)
+    .values(
+      OUTLETS.map((o) => ({
+        id: o.id,
+        name: o.name,
+        homepage: o.homepage,
+        region: o.region,
+        kind: o.kind,
+        quality: o.quality,
+        country: o.country ?? null,
+        active: true,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: outlets.id,
+      set: {
+        name: sql`excluded.name`,
+        homepage: sql`excluded.homepage`,
+        region: sql`excluded.region`,
+        kind: sql`excluded.kind`,
+        quality: sql`excluded.quality`,
+        country: sql`excluded.country`,
+        active: true,
+      },
+    });
+  await db
+    .insert(feeds)
+    .values(OUTLETS.flatMap((o) => o.feeds.map((f) => ({ url: f.url, outletId: o.id, topics: f.topics }))))
+    .onConflictDoUpdate({
+      target: feeds.url,
+      set: { outletId: sql`excluded.outlet_id`, topics: sql`excluded.topics`, active: true },
+    });
   await db.update(outlets).set({ active: false }).where(notInArray(outlets.id, outletIds));
   await db.update(feeds).set({ active: false }).where(notInArray(feeds.url, feedUrls));
 }
 
-const robotsCache = new Map<string, Promise<string>>();
+const robotsCache = new Map<string, { at: number; text: Promise<string> }>();
 
 async function robotsFor(origin: string): Promise<string> {
-  let cached = robotsCache.get(origin);
-  if (!cached) {
-    cached = fetch(`${origin}/robots.txt`, {
-      headers: { "User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    })
-      .then((r) => (r.ok ? r.text() : ""))
-      .catch(() => "");
-    robotsCache.set(origin, cached);
-  }
-  return cached;
+  const cached = robotsCache.get(origin);
+  if (cached && Date.now() - cached.at < ROBOTS_TTL_MS) return cached.text;
+  const text = fetch(`${origin}/robots.txt`, {
+    headers: { "User-Agent": USER_AGENT },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  })
+    .then((r) => (r.ok ? r.text() : ""))
+    .catch(() => "");
+  robotsCache.set(origin, { at: Date.now(), text });
+  return text;
 }
 
 type FeedRow = typeof feeds.$inferSelect;
@@ -120,16 +141,21 @@ export async function storeItems(
   const vectors = embed && fresh.length > 0 ? await embedSafely(embed, fresh.map((i) => i.title)) : null;
   const embeddingOf = new Map(fresh.map((item, i) => [item.url, vectors?.[i] ?? null]));
 
-  for (const item of items) {
-    if (known.has(item.url)) {
-      await db
-        .update(articles)
-        .set({ topics: sql`(select array(select distinct unnest(${articles.topics} || ${topicsLiteral}::text[])))` })
-        .where(eq(articles.url, item.url));
-      const storyId = known.get(item.url);
+  // Most of a feed is items we already have; merge their topics in one statement, skipping rows that have them all.
+  const seen = items.filter((i) => known.has(i.url)).map((i) => i.url);
+  if (seen.length > 0) {
+    await db
+      .update(articles)
+      .set({ topics: sql`(select array(select distinct unnest(${articles.topics} || ${topicsLiteral}::text[])))` })
+      .where(and(inArray(articles.url, seen), sql`not (${articles.topics} @> ${topicsLiteral}::text[])`));
+    for (const url of seen) {
+      const storyId = known.get(url);
       if (storyId) touched.add(storyId);
-      continue;
     }
+  }
+
+  for (const item of items) {
+    if (known.has(item.url)) continue;
 
     const embedding = embeddingOf.get(item.url) ?? null;
     const match = headline(item.title, embedding);
@@ -251,7 +277,7 @@ export async function rescoreStories(db: Db, now = new Date()) {
     group by p.story_id, t.topics, l.id, l.title
   `);
 
-  for (const r of rows) {
+  const updates = rows.map((r) => {
     const firstSeenAt = new Date(r.first_seen);
     const lastSeenAt = new Date(r.last_seen);
     const score = storyScore(
@@ -264,21 +290,31 @@ export async function rescoreStories(db: Db, now = new Date()) {
       },
       now,
     );
-    await db
-      .update(stories)
-      .set({
-        title: r.lead_title,
-        leadArticleId: r.lead_id,
-        topics: r.topics,
-        countries: r.countries,
-        outletCount: r.outlet_count,
-        recentOutlets: r.recent_outlets,
-        avgQuality: r.avg_quality,
-        firstSeenAt,
-        lastSeenAt,
-        score,
-      })
-      .where(eq(stories.id, r.story_id));
+    return {
+      id: r.story_id,
+      title: r.lead_title,
+      lead_id: r.lead_id,
+      topics: r.topics,
+      countries: r.countries,
+      outlet_count: r.outlet_count,
+      recent_outlets: r.recent_outlets,
+      avg_quality: r.avg_quality,
+      first_seen: firstSeenAt.toISOString(),
+      last_seen: lastSeenAt.toISOString(),
+      score,
+    };
+  });
+  // Thousands of recent stories at 300+ feeds: write them in a few statements, not one per story.
+  for (let i = 0; i < updates.length; i += RESCORE_BATCH) {
+    const batch = JSON.stringify(updates.slice(i, i + RESCORE_BATCH));
+    await db.execute(sql`update stories s set
+        title = v.title, lead_article_id = v.lead_id, topics = v.topics, countries = v.countries,
+        outlet_count = v.outlet_count, recent_outlets = v.recent_outlets, avg_quality = v.avg_quality,
+        first_seen_at = v.first_seen, last_seen_at = v.last_seen, score = v.score
+      from jsonb_to_recordset(${batch}::jsonb) as v(
+        id int, title text, lead_id int, topics text[], countries text[], outlet_count int,
+        recent_outlets int, avg_quality real, first_seen timestamptz, last_seen timestamptz, score real)
+      where s.id = v.id`);
   }
   // Saves on a story that reclustering emptied follow its lead article to the story it joined.
   await db.execute(sql`insert into saved_stories (user_id, story_id, article_id, created_at)
@@ -300,6 +336,20 @@ async function loadCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
   return rows.flatMap((r) => (r.storyId === null ? [] : [{ ...headline(r.title, r.embedding), storyId: r.storyId }]));
 }
 
+/**
+ * Two days of headlines with embeddings is tens of megabytes at 300+ feeds, so
+ * watch mode keeps them between runs (storeItems appends new ones) and only
+ * reloads every CANDIDATE_REFRESH_MS, or after a failed store.
+ */
+let candidateCache: { loadedAt: number; list: ClusterCandidate[] } | null = null;
+
+async function cachedCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
+  if (!candidateCache || now.getTime() - candidateCache.loadedAt > CANDIDATE_REFRESH_MS) {
+    candidateCache = { loadedAt: now.getTime(), list: await loadCandidates(db, now) };
+  }
+  return candidateCache.list;
+}
+
 async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>) {
   const queue = [...items];
   await Promise.all(
@@ -309,23 +359,46 @@ async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>)
   );
 }
 
+/** Group feeds by host so each publisher gets one request at a time. */
+export function byHost<T extends { url: string }>(rows: T[]): T[][] {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const host = new URL(row.url).hostname;
+    groups.set(host, [...(groups.get(host) ?? []), row]);
+  }
+  return [...groups.values()];
+}
+
+/** Feeds never fetched, or last fetched long enough ago given how often they have failed in a row. */
+function dueFeeds(now: Date) {
+  return and(
+    eq(feeds.active, true),
+    or(
+      isNull(feeds.lastFetchedAt),
+      sql`${feeds.lastFetchedAt} < ${now.toISOString()}::timestamptz
+        - make_interval(secs => ${FEED_INTERVAL_MS / 1000} * power(2, least(${feeds.consecutiveFailures}, ${MAX_BACKOFF_DOUBLINGS})))`,
+    ),
+  );
+}
+
 export async function runOnce(db: Db) {
   const now = new Date();
   await syncConfig(db);
-  const due = await db
-    .select()
-    .from(feeds)
-    .where(
-      and(
-        eq(feeds.active, true),
-        or(isNull(feeds.lastFetchedAt), lt(feeds.lastFetchedAt, new Date(now.getTime() - FEED_INTERVAL_MS))),
-      ),
-    );
-  const candidates = await loadCandidates(db, now);
+  const due = await db.select().from(feeds).where(dueFeeds(now));
+  const candidates = await cachedCandidates(db, now);
   const embed = await getEmbedder();
   let added = 0;
+  let failed = 0;
 
-  await pool(due, CONCURRENCY, async (feed) => {
+  const fail = async (feed: FeedRow, set: Partial<FeedRow>) => {
+    failed++;
+    await db
+      .update(feeds)
+      .set({ lastFetchedAt: new Date(), ...set, consecutiveFailures: feed.consecutiveFailures + 1 })
+      .where(eq(feeds.url, feed.url));
+  };
+
+  const ingestFeed = async (feed: FeedRow) => {
     const result = await fetchFeed(feed);
     const base = { lastFetchedAt: new Date() };
     if (result.kind === "ok") {
@@ -337,27 +410,28 @@ export async function runOnce(db: Db) {
           .set({ ...base, etag: result.etag, lastModified: result.lastModified, lastStatus: result.status, lastError: null, consecutiveFailures: 0 })
           .where(eq(feeds.url, feed.url));
       } catch (err) {
+        // A store can fail on a story that recluster removed; start from fresh candidates next run.
+        candidateCache = null;
         const message = err instanceof Error ? err.message : String(err);
-        await db
-          .update(feeds)
-          .set({ ...base, lastStatus: result.status, lastError: `parse: ${message}`, consecutiveFailures: feed.consecutiveFailures + 1 })
-          .where(eq(feeds.url, feed.url));
+        await fail(feed, { lastStatus: result.status, lastError: `parse: ${message}` });
       }
     } else if (result.kind === "not-modified") {
       await db.update(feeds).set({ ...base, lastStatus: 304, lastError: null, consecutiveFailures: 0 }).where(eq(feeds.url, feed.url));
     } else if (result.kind === "blocked") {
-      await db.update(feeds).set({ ...base, lastError: "blocked by robots.txt", active: false }).where(eq(feeds.url, feed.url));
+      // Counted as a failure so backoff stops us asking; it recovers by itself if the site changes its robots.txt.
+      await fail(feed, { lastError: "blocked by robots.txt" });
     } else {
-      await db
-        .update(feeds)
-        .set({ ...base, lastStatus: result.status, lastError: result.message, consecutiveFailures: feed.consecutiveFailures + 1 })
-        .where(eq(feeds.url, feed.url));
+      await fail(feed, { lastStatus: result.status, lastError: result.message });
     }
+  };
+
+  await pool(byHost(due), CONCURRENCY, async (group) => {
+    for (const feed of group) await ingestFeed(feed);
   });
 
   const rescored = await rescoreStories(db);
   console.log(
-    `[ingest] feeds=${due.length} new_articles=${added} stories_rescored=${rescored} embeddings=${embed ? "on" : "off"}`,
+    `[ingest] feeds=${due.length} failed=${failed} new_articles=${added} stories_rescored=${rescored} embeddings=${embed ? "on" : "off"} took=${Math.round((Date.now() - now.getTime()) / 1000)}s`,
   );
 }
 

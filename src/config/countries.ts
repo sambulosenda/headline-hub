@@ -47,6 +47,51 @@ export const COUNTRIES: Country[] = [
     name: "Tanzania",
     terms: ["tanzania", "tanzanian", "tanzanians", "dar es salaam", "dodoma", "zanzibar", "samia suluhu"],
   },
+  {
+    code: "et",
+    name: "Ethiopia",
+    terms: ["ethiopia", "ethiopian", "ethiopians", "addis ababa", "abiy ahmed", "tigray", "amhara", "oromia"],
+  },
+  {
+    code: "eg",
+    name: "Egypt",
+    terms: ["egypt", "egyptian", "egyptians", "cairo", "el-sisi", "suez canal", "giza"],
+  },
+  {
+    code: "rw",
+    name: "Rwanda",
+    terms: ["rwanda", "rwandan", "rwandans", "kigali", "kagame"],
+  },
+  {
+    code: "ma",
+    name: "Morocco",
+    terms: ["morocco", "moroccan", "moroccans", "rabat", "casablanca", "marrakech", "marrakesh", "tangier", "atlas lions"],
+  },
+  {
+    code: "zm",
+    name: "Zambia",
+    terms: ["zambia", "zambian", "zambians", "lusaka", "hichilema", "copperbelt", "chipolopolo"],
+  },
+  {
+    code: "bw",
+    name: "Botswana",
+    terms: ["botswana", "gaborone", "motswana", "batswana", "duma boko"],
+  },
+  {
+    code: "mw",
+    name: "Malawi",
+    terms: ["malawi", "malawian", "malawians", "lilongwe", "blantyre", "mutharika", "chakwera"],
+  },
+  {
+    code: "mz",
+    name: "Mozambique",
+    terms: ["mozambique", "mozambican", "mozambicans", "maputo", "cabo delgado", "frelimo"],
+  },
+  {
+    code: "na",
+    name: "Namibia",
+    terms: ["namibia", "namibian", "namibians", "windhoek", "swapo", "nandi-ndaitwah"],
+  },
 ];
 
 export type CountryCode = (typeof COUNTRIES)[number]["code"];

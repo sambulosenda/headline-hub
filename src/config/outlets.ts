@@ -1,3 +1,7 @@
+import { AFRICA_OUTLETS } from "./sources/africa";
+import { INTL_OUTLETS } from "./sources/intl";
+import { UK_OUTLETS } from "./sources/uk";
+import { US_OUTLETS } from "./sources/us";
 import type { TopicSlug } from "./topics";
 
 export const REGIONS = ["uk", "us", "intl", "africa"] as const;
@@ -24,9 +28,10 @@ export interface OutletConfig {
 /**
  * Seed list of publisher feeds. Only official RSS/Atom feeds published by the
  * outlets themselves. Check each publisher's feed terms before going live, and
- * remove an outlet promptly if it asks.
+ * remove an outlet promptly if it asks. More outlets live in src/config/sources/;
+ * vet new feeds with `npm run check-feeds -- <url>` before adding them.
  */
-export const OUTLETS: OutletConfig[] = [
+const CORE_OUTLETS: OutletConfig[] = [
   {
     id: "bbc",
     name: "BBC News",
@@ -685,3 +690,20 @@ export const OUTLETS: OutletConfig[] = [
     ],
   },
 ];
+
+/**
+ * Combine outlet lists. A later entry with an id already seen adds its feeds to
+ * that outlet and keeps the first entry's details, so one publisher's sections
+ * can be listed in several places and still count as one outlet in a story.
+ */
+export function mergeOutlets(lists: OutletConfig[][]): OutletConfig[] {
+  const byId = new Map<string, OutletConfig>();
+  for (const outlet of lists.flat()) {
+    const seen = byId.get(outlet.id);
+    if (seen) seen.feeds = [...seen.feeds, ...outlet.feeds];
+    else byId.set(outlet.id, { ...outlet, feeds: [...outlet.feeds] });
+  }
+  return [...byId.values()];
+}
+
+export const OUTLETS: OutletConfig[] = mergeOutlets([CORE_OUTLETS, UK_OUTLETS, US_OUTLETS, INTL_OUTLETS, AFRICA_OUTLETS]);

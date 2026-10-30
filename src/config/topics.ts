@@ -6,6 +6,7 @@ export const TOPICS = [
   { slug: "tech", name: "Tech" },
   { slug: "science", name: "Science" },
   { slug: "football", name: "Football" },
+  { slug: "sport", name: "Sport" },
 ] as const;
 
 export type TopicSlug = (typeof TOPICS)[number]["slug"];

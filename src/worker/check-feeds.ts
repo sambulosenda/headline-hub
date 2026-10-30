@@ -22,14 +22,24 @@ interface Result {
   detail: string;
 }
 
-async function check(outlet: string, url: string): Promise<Result> {
-  const headers = { "User-Agent": USER_AGENT };
-  try {
-    const { origin, pathname, search } = new URL(url);
-    const robots = await fetch(`${origin}/robots.txt`, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
+const headers = { "User-Agent": USER_AGENT };
+const robotsCache = new Map<string, Promise<string>>();
+
+function robotsFor(origin: string): Promise<string> {
+  let robots = robotsCache.get(origin);
+  if (!robots) {
+    robots = fetch(`${origin}/robots.txt`, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
       .then((r) => (r.ok ? r.text() : ""))
       .catch(() => "");
-    if (!isAllowed(robots, pathname + search)) return { outlet, url, ok: false, detail: "blocked by robots.txt" };
+    robotsCache.set(origin, robots);
+  }
+  return robots;
+}
+
+async function check(outlet: string, url: string): Promise<Result> {
+  try {
+    const { origin, pathname, search } = new URL(url);
+    if (!isAllowed(await robotsFor(origin), pathname + search)) return { outlet, url, ok: false, detail: "blocked by robots.txt" };
 
     const res = await fetch(url, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return { outlet, url, ok: false, detail: `HTTP ${res.status}` };
@@ -59,7 +69,11 @@ async function main() {
   for (const r of results) console.log(`${r.ok ? "ok  " : "FAIL"} ${r.outlet.padEnd(26)} ${r.detail.padEnd(32)} ${r.url}`);
   const failed = results.filter((r) => !r.ok).length;
   console.log(`\n${results.length - failed}/${results.length} feeds healthy`);
-  if (failed > 0) process.exitCode = 1;
+  if (failed > 0) {
+    console.log("\nFailing:");
+    for (const r of results.filter((r) => !r.ok)) console.log(`${r.url}\t${r.detail}`);
+    process.exitCode = 1;
+  }
 }
 
 if (process.argv[1]?.endsWith("check-feeds.ts")) void main();
