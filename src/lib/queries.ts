@@ -272,3 +272,28 @@ export async function countUpdates(filters: ScopeFilters, sinceId: number, story
     latestId: Math.max(sinceId, ...fresh.map((f) => f.maxId)),
   };
 }
+
+export interface Newsroom {
+  id: string;
+  name: string;
+  homepage: string;
+  /** Headlines in the last day. */
+  recent: number;
+}
+
+/** A country's own outlets we read, busiest first. */
+export async function getNewsrooms(country: string, hours = 24): Promise<Newsroom[]> {
+  const since = new Date(Date.now() - hours * 3_600_000);
+  return getDb()
+    .select({
+      id: outlets.id,
+      name: outlets.name,
+      homepage: outlets.homepage,
+      recent: sql<number>`count(${articles.id})::int`,
+    })
+    .from(outlets)
+    .leftJoin(articles, and(eq(articles.outletId, outlets.id), gt(articles.publishedAt, since)))
+    .where(and(eq(outlets.country, country), eq(outlets.active, true)))
+    .groupBy(outlets.id)
+    .orderBy(desc(sql`count(${articles.id})`), desc(outlets.quality));
+}

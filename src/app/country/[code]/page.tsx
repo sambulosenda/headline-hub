@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { FeedHeader } from "@/components/FeedHeader";
 import { CountryChips } from "@/components/CountryChips";
 import { FeedSkeleton, LatestHeadlines, TopStories } from "@/components/Feeds";
 import { COUNTRIES, findCountry } from "@/config/countries";
@@ -20,24 +20,17 @@ async function CountryFeed({ params, searchParams }: PageProps<"/country/[code]"
   if (!country) notFound();
   const view = (await searchParams).view === "latest" ? "latest" : "top";
   const pathname = `/country/${country.code}`;
-  const tab = (active: boolean) =>
-    `border-b-2 pb-1 ${active ? "border-accent text-foreground" : "border-transparent text-muted"}`;
 
   return (
     <>
-      <h1 className="text-2xl font-bold">{country.name}</h1>
-      <p className="mb-3 mt-1 text-sm text-muted">
-        From {country.name}&apos;s own outlets, and any outlet whose headline or summary mentions it.
-      </p>
-      <CountryChips current={country.code} />
-      <nav className="mb-4 flex gap-4 text-sm" aria-label="View">
-        <Link href={pathname} className={tab(view === "top")}>
-          Top
-        </Link>
-        <Link href={`${pathname}?view=latest`} className={tab(view === "latest")}>
-          Latest
-        </Link>
-      </nav>
+      <FeedHeader title={country.name} pathname={pathname} view={view}>
+        <p className="mt-1 text-sm text-subtle">
+          {country.name}&apos;s own newsrooms first, then what the rest of the world is saying.
+        </p>
+        <div className="mt-2">
+          <CountryChips current={country.code} />
+        </div>
+      </FeedHeader>
       {view === "latest" ? (
         <LatestHeadlines pathname={pathname} searchParams={searchParams} country={country.code} />
       ) : (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coverageStrip, coverageTimeline, originCounts, outletOrigin } from "@/lib/coverage";
+import { coverageStrip, coverageTimeline, originCounts, outletOrigin, splitByLocalCoverage } from "@/lib/coverage";
 
 const now = new Date("2026-10-30T12:00:00Z");
 const minsAgo = (m: number) => new Date(now.getTime() - m * 60_000);
@@ -65,5 +65,16 @@ describe("coverageTimeline", () => {
     expect(entries.map((e) => e.item.outletId)).toEqual(["herald", "reuters"]);
     expect(entries[0].copies.map((x) => x.outletId)).toEqual(["zbc"]);
     expect(entries[1].origin).toBe("international");
+  });
+});
+
+describe("splitByLocalCoverage", () => {
+  it("puts stories a local outlet covers first and keeps their order", () => {
+    const a = { id: 1, coverage: [item("bbc", "uk", "gb"), item("herald", "africa", "zw")] };
+    const b = { id: 2, coverage: [item("reuters", "world", null)] };
+    const c = { id: 3, coverage: [item("newsday", "africa", "zw")] };
+    const { local, abroad } = splitByLocalCoverage([a, b, c], "zw");
+    expect(local.map((s) => s.id)).toEqual([1, 3]);
+    expect(abroad.map((s) => s.id)).toEqual([2]);
   });
 });

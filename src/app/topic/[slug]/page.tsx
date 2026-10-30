@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { FeedHeader } from "@/components/FeedHeader";
 import { CountryChips } from "@/components/CountryChips";
 import { FeedSkeleton, LatestHeadlines, TopStories } from "@/components/Feeds";
 import { TOPICS, findTopic } from "@/config/topics";
@@ -20,21 +20,16 @@ async function TopicFeed({ params, searchParams }: PageProps<"/topic/[slug]">) {
   if (!topic) notFound();
   const view = (await searchParams).view === "latest" ? "latest" : "top";
   const pathname = `/topic/${topic.slug}`;
-  const tab = (active: boolean) =>
-    `border-b-2 pb-1 ${active ? "border-accent text-foreground" : "border-transparent text-muted"}`;
 
   return (
     <>
-      <h1 className="mb-3 text-2xl font-bold">{topic.name}</h1>
-      {topic.slug === "africa" && <CountryChips />}
-      <nav className="mb-4 flex gap-4 text-sm" aria-label="View">
-        <Link href={pathname} className={tab(view === "top")}>
-          Top
-        </Link>
-        <Link href={`${pathname}?view=latest`} className={tab(view === "latest")}>
-          Latest
-        </Link>
-      </nav>
+      <FeedHeader title={topic.name} pathname={pathname} view={view}>
+        {topic.slug === "africa" && (
+          <div className="mt-1">
+            <CountryChips />
+          </div>
+        )}
+      </FeedHeader>
       {view === "latest" ? (
         <LatestHeadlines pathname={pathname} searchParams={searchParams} topic={topic.slug} />
       ) : (
