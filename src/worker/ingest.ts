@@ -4,7 +4,7 @@ import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
 import { tagCountries } from "../lib/countries";
 import { refreshTrendingNames } from "../lib/entities";
-import { getEmbedder, type Embedder } from "../lib/embeddings";
+import { getEmbedder, sameModel, type Embedder } from "../lib/embeddings";
 import { parseFeed, type FeedItem } from "../lib/feeds";
 import { storyScore } from "../lib/ranking";
 import { isAllowed, USER_AGENT } from "../lib/robots";
@@ -194,6 +194,7 @@ export async function storeItems(
         countries: tagCountries(item.title, item.summary),
         tokens: match.tokens,
         embedding,
+        embeddingModel: embedding ? (embed?.model ?? null) : null,
         publishedAt,
       })
       .onConflictDoNothing({ target: articles.url })
@@ -340,12 +341,26 @@ export async function rescoreStories(db: Db, now = new Date()) {
   return rows.length;
 }
 
-async function loadCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
+const candidateColumns = {
+  storyId: articles.storyId,
+  title: articles.title,
+  embedding: articles.embedding,
+  embeddingModel: articles.embeddingModel,
+};
+
+type CandidateRow = { storyId: number | null; title: string; embedding: number[] | null; embeddingModel: string | null };
+
+/** Rows as candidates, keeping only embeddings the current model made. */
+function toCandidates(rows: CandidateRow[], model: string | undefined): ClusterCandidate[] {
+  return rows.flatMap((r) => (r.storyId === null ? [] : [{ ...headline(r.title, sameModel(r, model)), storyId: r.storyId }]));
+}
+
+async function loadCandidates(db: Db, now: Date, model: string | undefined): Promise<ClusterCandidate[]> {
   const rows = await db
-    .select({ storyId: articles.storyId, title: articles.title, embedding: articles.embedding })
+    .select(candidateColumns)
     .from(articles)
     .where(gt(articles.publishedAt, new Date(now.getTime() - CLUSTER_WINDOW_MS)));
-  return rows.flatMap((r) => (r.storyId === null ? [] : [{ ...headline(r.title, r.embedding), storyId: r.storyId }]));
+  return toCandidates(rows, model);
 }
 
 /** Most headlines a loader returns; recent ones first. */
@@ -356,12 +371,12 @@ const LOADER_LIMIT = 3_000;
  * 48-hour window. Every match except a very strong embedding match needs shared
  * words (see matchScore), so this finds almost everything the full list would.
  */
-export function candidatesFromDb(db: Db, now: Date): CandidateLoader {
+export function candidatesFromDb(db: Db, now: Date, model: string | undefined): CandidateLoader {
   return async (fresh) => {
     const words = [...new Set(fresh.flatMap((h) => h.tokens))];
     if (words.length === 0) return [];
     const rows = await db
-      .select({ storyId: articles.storyId, title: articles.title, embedding: articles.embedding })
+      .select(candidateColumns)
       .from(articles)
       .where(
         and(
@@ -372,7 +387,7 @@ export function candidatesFromDb(db: Db, now: Date): CandidateLoader {
       )
       .orderBy(desc(articles.publishedAt))
       .limit(LOADER_LIMIT);
-    return rows.flatMap((r) => (r.storyId === null ? [] : [{ ...headline(r.title, r.embedding), storyId: r.storyId }]));
+    return toCandidates(rows, model);
   };
 }
 
@@ -383,9 +398,9 @@ export function candidatesFromDb(db: Db, now: Date): CandidateLoader {
  */
 let candidateCache: { loadedAt: number; list: ClusterCandidate[] } | null = null;
 
-async function cachedCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
+async function cachedCandidates(db: Db, now: Date, model: string | undefined): Promise<ClusterCandidate[]> {
   if (!candidateCache || now.getTime() - candidateCache.loadedAt > CANDIDATE_REFRESH_MS) {
-    candidateCache = { loadedAt: now.getTime(), list: await loadCandidates(db, now) };
+    candidateCache = { loadedAt: now.getTime(), list: await loadCandidates(db, now, model) };
   }
   return candidateCache.list;
 }
@@ -488,8 +503,8 @@ export async function runOnce(db: Db) {
   const now = new Date();
   await syncConfig(db);
   const due = await dueFeedRows(db, now);
-  const candidates = await cachedCandidates(db, now);
   const embed = await getEmbedder();
+  const candidates = await cachedCandidates(db, now, embed?.model);
   let added = 0;
   let failed = 0;
 

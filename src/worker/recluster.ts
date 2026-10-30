@@ -10,7 +10,7 @@
 import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { closeDb, getDb } from "../db/client";
 import { articles, outlets, stories } from "../db/schema";
-import { getEmbedder } from "../lib/embeddings";
+import { getEmbedder, sameModel } from "../lib/embeddings";
 import { findStory, headline, SEMANTIC_THRESHOLD, type ClusterCandidate, type Thresholds } from "../lib/similarity";
 import { rescoreStories } from "./ingest";
 
@@ -27,6 +27,7 @@ export interface Row {
   outletName: string;
   storyId: number | null;
   embedding: number[] | null;
+  embeddingModel?: string | null;
   publishedAt: Date;
 }
 
@@ -65,6 +66,7 @@ async function main() {
       outletName: outlets.name,
       storyId: articles.storyId,
       embedding: articles.embedding,
+      embeddingModel: articles.embeddingModel,
       publishedAt: articles.publishedAt,
     })
     .from(articles)
@@ -73,6 +75,8 @@ async function main() {
     .orderBy(articles.publishedAt, articles.id);
 
   const embed = await getEmbedder();
+  // Vectors another model made (e.g. Workers AI) can't be compared with this one's, so they count as missing.
+  for (const row of rows) row.embedding = sameModel(row, embed?.model);
   const missing = rows.filter((r) => !r.embedding);
   if (embed && missing.length > 0) {
     console.log(`[recluster] embedding ${missing.length} headlines...`);
@@ -82,7 +86,7 @@ async function main() {
       for (const [j, row] of batch.entries()) {
         row.embedding = vectors[j];
         if (!dryRun) {
-          await db.update(articles).set({ embedding: row.embedding }).where(eq(articles.id, row.id));
+          await db.update(articles).set({ embedding: row.embedding, embeddingModel: embed.model }).where(eq(articles.id, row.id));
         }
       }
     }

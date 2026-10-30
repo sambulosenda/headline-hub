@@ -29,6 +29,7 @@ export function workersAiEmbedder(ai: Ai): Embedder {
     }
     return out;
   };
+  embed.model = WORKERS_AI_MODEL;
   embed.thresholds = BGE_SMALL_THRESHOLDS;
   return embed;
 }

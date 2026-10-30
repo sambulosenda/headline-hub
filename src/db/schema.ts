@@ -81,6 +81,8 @@ export const articles = pgTable(
     tokens: text("tokens").array().notNull(),
     /** Unit-length headline embedding; null when embeddings were off. */
     embedding: real("embedding").array(),
+    /** Model that made `embedding`; null means all-MiniLM-L6-v2 (rows from before this column). Vectors from different models are never compared. */
+    embeddingModel: text("embedding_model"),
     /** Publisher's date when given and sane, otherwise when we first saw it. */
     publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),

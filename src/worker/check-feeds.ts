@@ -23,17 +23,21 @@ export interface Result {
 }
 
 const headers = { "User-Agent": USER_AGENT };
-const robotsCache = new Map<string, Promise<string>>();
+/**
+ * Settled text with a short TTL: the feed-check Worker reuses this module across
+ * requests, and a Worker can't await a fetch that another request started.
+ */
+const robotsCache = new Map<string, { at: number; text: string }>();
+const ROBOTS_TTL_MS = 10 * 60_000;
 
-function robotsFor(origin: string): Promise<string> {
-  let robots = robotsCache.get(origin);
-  if (!robots) {
-    robots = fetch(`${origin}/robots.txt`, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
-      .then((r) => (r.ok ? r.text() : ""))
-      .catch(() => "");
-    robotsCache.set(origin, robots);
-  }
-  return robots;
+async function robotsFor(origin: string): Promise<string> {
+  const cached = robotsCache.get(origin);
+  if (cached && Date.now() - cached.at < ROBOTS_TTL_MS) return cached.text;
+  const text = await fetch(`${origin}/robots.txt`, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
+    .then((r) => (r.ok ? r.text() : ""))
+    .catch(() => "");
+  robotsCache.set(origin, { at: Date.now(), text });
+  return text;
 }
 
 export async function check(outlet: string, url: string): Promise<Result> {
@@ -59,7 +63,7 @@ export async function check(outlet: string, url: string): Promise<Result> {
 /** Every configured feed, or just the given URLs. */
 export function feedJobs(urls: string[] = []): { outlet: string; url: string }[] {
   return urls.length > 0
-    ? urls.map((url) => ({ outlet: new URL(url).hostname, url }))
+    ? urls.map((url) => ({ outlet: URL.parse(url)?.hostname ?? url, url }))
     : OUTLETS.flatMap((o) => o.feeds.map((f) => ({ outlet: o.name, url: f.url })));
 }
 

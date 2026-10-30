@@ -78,6 +78,13 @@
       "when": 1793347112284,
       "tag": "0010_trending_names",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793354544192,
+      "tag": "0011_article_embedding_model",
+      "breakpoints": true
     }
   ]
 }

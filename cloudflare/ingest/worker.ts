@@ -7,7 +7,7 @@
  * - every 5 minutes: digests and breaking-news alerts
  * - every 15 minutes: sync outlets and feeds from config
  */
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { withDb } from "../../src/db/client";
 import { feeds } from "../../src/db/schema";
 import { embeddingsEnabled } from "../../src/lib/embeddings";
@@ -40,9 +40,20 @@ async function enqueueDueFeeds(env: Env, db: Parameters<typeof dueFeedRows>[0], 
   if (due.length === 0) return 0;
   // Claim them now so the next minute's run doesn't queue them again while they wait.
   await db.update(feeds).set({ lastFetchedAt: now }).where(inArray(feeds.url, due.map((f) => f.url)));
-  const jobs = byHost(due).map((group) => ({ body: { urls: group.map((f) => f.url) } }));
-  for (let i = 0; i < jobs.length; i += 100) await env.FEEDS.sendBatch(jobs.slice(i, i + 100));
-  return jobs.length;
+  const groups = byHost(due);
+  for (let i = 0; i < groups.length; i += 100) {
+    const chunk = groups.slice(i, i + 100);
+    try {
+      await env.FEEDS.sendBatch(chunk.map((group) => ({ body: { urls: group.map((f) => f.url) } })));
+    } catch (err) {
+      // Give back the claim on everything not queued, so those feeds are due again next minute.
+      for (const feed of groups.slice(i).flat()) {
+        await db.update(feeds).set({ lastFetchedAt: feed.lastFetchedAt }).where(eq(feeds.url, feed.url));
+      }
+      throw err;
+    }
+  }
+  return groups.length;
 }
 
 const worker = {
@@ -69,11 +80,12 @@ const worker = {
   async queue(batch: MessageBatch<SiteJob>, env: Env): Promise<void> {
     const embed = embeddingsEnabled() ? workersAiEmbedder(env.AI) : null;
     await withDb(env.HYPERDRIVE.connectionString, async (db) => {
-      const candidates = candidatesFromDb(db, new Date());
+      const candidates = candidatesFromDb(db, new Date(), embed?.model);
       let added = 0;
       let failed = 0;
       for (const message of batch.messages) {
-        const rows = await db.select().from(feeds).where(inArray(feeds.url, message.body.urls));
+        // A feed dropped from config since it was queued is skipped.
+        const rows = await db.select().from(feeds).where(and(inArray(feeds.url, message.body.urls), eq(feeds.active, true)));
         for (const feed of rows) {
           const result = await ingestFeed(db, feed, candidates, embed);
           added += result.added;

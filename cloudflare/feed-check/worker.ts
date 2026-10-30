@@ -16,7 +16,7 @@ const worker = {
     if (!env.CHECK_TOKEN || url.searchParams.get("token") !== env.CHECK_TOKEN) {
       return new Response("Not found\n", { status: 404 });
     }
-    const egress = await fetch("https://api.ipify.org")
+    const egress = await fetch("https://api.ipify.org", { signal: AbortSignal.timeout(5_000) })
       .then((r) => r.text())
       .catch(() => "unknown");
     const results = await checkAll(feedJobs(url.searchParams.getAll("url")));

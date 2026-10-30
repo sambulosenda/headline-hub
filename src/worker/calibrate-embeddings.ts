@@ -69,12 +69,15 @@ async function main() {
 
   const minilm = await getEmbedder();
   if (!minilm) throw new Error("The MiniLM model is needed as the reference; unset EMBEDDINGS=off.");
-  const missing = rows.filter((r) => !r.embedding);
-  for (let i = 0; i < missing.length; i += 64) {
-    const vectors = await minilm(missing.slice(i, i + 64).map((r) => r.title));
-    missing.slice(i, i + 64).forEach((r, j) => (r.embedding = vectors[j]));
+  // Embed everything afresh: stored vectors may come from another model (Workers AI).
+  for (let i = 0; i < rows.length; i += 64) {
+    const vectors = await minilm(rows.slice(i, i + 64).map((r) => r.title));
+    rows.slice(i, i + 64).forEach((r, j) => (r.embedding = vectors[j]));
   }
   const reference = cluster(rows, MINILM_THRESHOLDS);
+  if (!reference.some((g) => g.length > 1)) {
+    throw new Error("No story in the window has two headlines, so there's nothing to calibrate against. Try a longer --hours.");
+  }
 
   const bge = await workersAi(rows.map((r) => r.title));
   const bgeRows = rows.map((r, i) => ({ ...r, embedding: bge[i] }));
