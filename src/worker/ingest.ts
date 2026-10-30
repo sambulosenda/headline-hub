@@ -1,14 +1,14 @@
-import { and, eq, gt, inArray, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNotNull, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
 import { tagCountries } from "../lib/countries";
 import { refreshTrendingNames } from "../lib/entities";
-import { getEmbedder, type Embedder } from "../lib/embeddings";
+import { getEmbedder, sameModel, type Embedder } from "../lib/embeddings";
 import { parseFeed, type FeedItem } from "../lib/feeds";
 import { storyScore } from "../lib/ranking";
 import { isAllowed, USER_AGENT } from "../lib/robots";
-import { findStory, headline, type ClusterCandidate } from "../lib/similarity";
+import { findStory, headline, type ClusterCandidate, type Headline } from "../lib/similarity";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -66,12 +66,13 @@ export async function syncConfig(db: Db) {
   await db.update(feeds).set({ active: false }).where(notInArray(feeds.url, feedUrls));
 }
 
-const robotsCache = new Map<string, { at: number; text: Promise<string> }>();
+/** Settled text only: a Cloudflare Worker can't await a fetch that another request started. */
+const robotsCache = new Map<string, { at: number; text: string }>();
 
 async function robotsFor(origin: string): Promise<string> {
   const cached = robotsCache.get(origin);
   if (cached && Date.now() - cached.at < ROBOTS_TTL_MS) return cached.text;
-  const text = fetch(`${origin}/robots.txt`, {
+  const text = await fetch(`${origin}/robots.txt`, {
     headers: { "User-Agent": USER_AGENT },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   })
@@ -81,7 +82,7 @@ async function robotsFor(origin: string): Promise<string> {
   return text;
 }
 
-type FeedRow = typeof feeds.$inferSelect;
+export type FeedRow = typeof feeds.$inferSelect;
 
 type FetchResult =
   | { kind: "ok"; xml: string; etag: string | null; lastModified: string | null; status: number }
@@ -114,15 +115,19 @@ async function fetchFeed(feed: FeedRow): Promise<FetchResult> {
   }
 }
 
+/** Fetches clustering candidates for a batch of new headlines, for callers that can't hold 48 hours of them in memory. */
+export type CandidateLoader = (fresh: Headline[]) => Promise<ClusterCandidate[]>;
+
 /**
  * Store new items, merge topics for known ones, and assign each new article to
- * a story. Mutates `candidates` so later items in the run can join new stories.
+ * a story. Mutates `candidates` (or the list a loader returns) so later items
+ * in the run can join new stories.
  */
 export async function storeItems(
   db: Db,
   feed: Pick<FeedRow, "outletId" | "topics">,
   items: FeedItem[],
-  candidates: ClusterCandidate[],
+  candidatesOrLoader: ClusterCandidate[] | CandidateLoader,
   now = new Date(),
   embed: Embedder | null = null,
 ): Promise<{ touched: Set<number>; added: number }> {
@@ -141,6 +146,12 @@ export async function storeItems(
   const fresh = items.filter((i) => !known.has(i.url));
   const vectors = embed && fresh.length > 0 ? await embedSafely(embed, fresh.map((i) => i.title)) : null;
   const embeddingOf = new Map(fresh.map((item, i) => [item.url, vectors?.[i] ?? null]));
+  const candidates =
+    typeof candidatesOrLoader === "function"
+      ? fresh.length > 0
+        ? await candidatesOrLoader(fresh.map((i) => headline(i.title)))
+        : []
+      : candidatesOrLoader;
 
   // Most of a feed is items we already have; merge their topics in one statement, skipping rows that have them all.
   const seen = items.filter((i) => known.has(i.url)).map((i) => i.url);
@@ -161,7 +172,7 @@ export async function storeItems(
     const embedding = embeddingOf.get(item.url) ?? null;
     const match = headline(item.title, embedding);
     const publishedAt = item.publishedAt ?? now;
-    let storyId = findStory(match, candidates);
+    let storyId = findStory(match, candidates, embedding ? embed?.thresholds : undefined);
     if (storyId === null) {
       const [story] = await db
         .insert(stories)
@@ -183,6 +194,7 @@ export async function storeItems(
         countries: tagCountries(item.title, item.summary),
         tokens: match.tokens,
         embedding,
+        embeddingModel: embedding ? (embed?.model ?? null) : null,
         publishedAt,
       })
       .onConflictDoNothing({ target: articles.url })
@@ -329,12 +341,55 @@ export async function rescoreStories(db: Db, now = new Date()) {
   return rows.length;
 }
 
-async function loadCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
+const candidateColumns = {
+  storyId: articles.storyId,
+  title: articles.title,
+  embedding: articles.embedding,
+  embeddingModel: articles.embeddingModel,
+};
+
+type CandidateRow = { storyId: number | null; title: string; embedding: number[] | null; embeddingModel: string | null };
+
+/** Rows as candidates, keeping only embeddings the current model made. */
+function toCandidates(rows: CandidateRow[], model: string | undefined): ClusterCandidate[] {
+  return rows.flatMap((r) => (r.storyId === null ? [] : [{ ...headline(r.title, sameModel(r, model)), storyId: r.storyId }]));
+}
+
+async function loadCandidates(db: Db, now: Date, model: string | undefined): Promise<ClusterCandidate[]> {
   const rows = await db
-    .select({ storyId: articles.storyId, title: articles.title, embedding: articles.embedding })
+    .select(candidateColumns)
     .from(articles)
     .where(gt(articles.publishedAt, new Date(now.getTime() - CLUSTER_WINDOW_MS)));
-  return rows.flatMap((r) => (r.storyId === null ? [] : [{ ...headline(r.title, r.embedding), storyId: r.storyId }]));
+  return toCandidates(rows, model);
+}
+
+/** Most headlines a loader returns; recent ones first. */
+const LOADER_LIMIT = 3_000;
+
+/**
+ * Candidates sharing at least one word with the new headlines, from the same
+ * 48-hour window. Every match except a very strong embedding match needs shared
+ * words (see matchScore), so this finds almost everything the full list would.
+ */
+export function candidatesFromDb(db: Db, now: Date, model: string | undefined): CandidateLoader {
+  return async (fresh) => {
+    const words = [...new Set(fresh.flatMap((h) => h.tokens))];
+    if (words.length === 0) return [];
+    const rows = await db
+      .select(candidateColumns)
+      .from(articles)
+      .where(
+        and(
+          gt(articles.publishedAt, new Date(now.getTime() - CLUSTER_WINDOW_MS)),
+          isNotNull(articles.storyId),
+          // Tokens are only [a-z0-9£$%] (titleTokens), so quoting them makes a safe array literal.
+          sql`${articles.tokens} && ${`{${words.map((w) => `"${w}"`).join(",")}}`}::text[]`,
+        ),
+      )
+      .orderBy(desc(articles.publishedAt))
+      .limit(LOADER_LIMIT);
+    return toCandidates(rows, model);
+  };
 }
 
 /**
@@ -344,9 +399,9 @@ async function loadCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
  */
 let candidateCache: { loadedAt: number; list: ClusterCandidate[] } | null = null;
 
-async function cachedCandidates(db: Db, now: Date): Promise<ClusterCandidate[]> {
+async function cachedCandidates(db: Db, now: Date, model: string | undefined): Promise<ClusterCandidate[]> {
   if (!candidateCache || now.getTime() - candidateCache.loadedAt > CANDIDATE_REFRESH_MS) {
-    candidateCache = { loadedAt: now.getTime(), list: await loadCandidates(db, now) };
+    candidateCache = { loadedAt: now.getTime(), list: await loadCandidates(db, now, model) };
   }
   return candidateCache.list;
 }
@@ -382,57 +437,59 @@ function dueFeeds(now: Date) {
   );
 }
 
+/** Feeds that are due now, as rows. */
+export function dueFeedRows(db: Db, now = new Date()) {
+  return db.select().from(feeds).where(dueFeeds(now));
+}
+
+async function markFailed(db: Db, feed: FeedRow, set: Partial<FeedRow>) {
+  await db
+    .update(feeds)
+    .set({ lastFetchedAt: new Date(), ...set, consecutiveFailures: feed.consecutiveFailures + 1 })
+    .where(eq(feeds.url, feed.url));
+}
+
+/** Fetch, parse and store one feed, and record how it went. */
+export async function ingestFeed(
+  db: Db,
+  feed: FeedRow,
+  candidates: ClusterCandidate[] | CandidateLoader,
+  embed: Embedder | null,
+): Promise<{ added: number; failed: boolean }> {
+  const result = await fetchFeed(feed);
+  const base = { lastFetchedAt: new Date() };
+  if (result.kind === "ok") {
+    try {
+      const items = await parseFeed(result.xml);
+      const { added } = await storeItems(db, feed, items, candidates, new Date(), embed);
+      await db
+        .update(feeds)
+        .set({ ...base, etag: result.etag, lastModified: result.lastModified, lastStatus: result.status, lastError: null, consecutiveFailures: 0 })
+        .where(eq(feeds.url, feed.url));
+      return { added, failed: false };
+    } catch (err) {
+      // A store can fail on a story that recluster removed; start from fresh candidates next run.
+      candidateCache = null;
+      const message = err instanceof Error ? err.message : String(err);
+      await markFailed(db, feed, { lastStatus: result.status, lastError: `parse: ${message}` });
+    }
+  } else if (result.kind === "not-modified") {
+    await db.update(feeds).set({ ...base, lastStatus: 304, lastError: null, consecutiveFailures: 0 }).where(eq(feeds.url, feed.url));
+    return { added: 0, failed: false };
+  } else if (result.kind === "blocked") {
+    // Counted as a failure so backoff stops us asking; it recovers by itself if the site changes its robots.txt.
+    await markFailed(db, feed, { lastError: "blocked by robots.txt" });
+  } else {
+    await markFailed(db, feed, { lastStatus: result.status, lastError: result.message });
+  }
+  return { added: 0, failed: true };
+}
+
 const NAMES_REFRESH_MS = 10 * 60_000;
 let lastNamesRefresh = 0;
 
-export async function runOnce(db: Db) {
-  const now = new Date();
-  await syncConfig(db);
-  const due = await db.select().from(feeds).where(dueFeeds(now));
-  const candidates = await cachedCandidates(db, now);
-  const embed = await getEmbedder();
-  let added = 0;
-  let failed = 0;
-
-  const fail = async (feed: FeedRow, set: Partial<FeedRow>) => {
-    failed++;
-    await db
-      .update(feeds)
-      .set({ lastFetchedAt: new Date(), ...set, consecutiveFailures: feed.consecutiveFailures + 1 })
-      .where(eq(feeds.url, feed.url));
-  };
-
-  const ingestFeed = async (feed: FeedRow) => {
-    const result = await fetchFeed(feed);
-    const base = { lastFetchedAt: new Date() };
-    if (result.kind === "ok") {
-      try {
-        const items = await parseFeed(result.xml);
-        added += (await storeItems(db, feed, items, candidates, new Date(), embed)).added;
-        await db
-          .update(feeds)
-          .set({ ...base, etag: result.etag, lastModified: result.lastModified, lastStatus: result.status, lastError: null, consecutiveFailures: 0 })
-          .where(eq(feeds.url, feed.url));
-      } catch (err) {
-        // A store can fail on a story that recluster removed; start from fresh candidates next run.
-        candidateCache = null;
-        const message = err instanceof Error ? err.message : String(err);
-        await fail(feed, { lastStatus: result.status, lastError: `parse: ${message}` });
-      }
-    } else if (result.kind === "not-modified") {
-      await db.update(feeds).set({ ...base, lastStatus: 304, lastError: null, consecutiveFailures: 0 }).where(eq(feeds.url, feed.url));
-    } else if (result.kind === "blocked") {
-      // Counted as a failure so backoff stops us asking; it recovers by itself if the site changes its robots.txt.
-      await fail(feed, { lastError: "blocked by robots.txt" });
-    } else {
-      await fail(feed, { lastStatus: result.status, lastError: result.message });
-    }
-  };
-
-  await pool(byHost(due), CONCURRENCY, async (group) => {
-    for (const feed of group) await ingestFeed(feed);
-  });
-
+/** Rescore recent stories, and recount trending names when something changed or they're getting stale. */
+export async function refreshDerived(db: Db, now: Date, added: number) {
   const rescored = await rescoreStories(db);
   // Recounting names reads a day of headlines, so only when something changed or it's getting stale.
   let names = "skipped";
@@ -440,6 +497,27 @@ export async function runOnce(db: Db) {
     names = String(await refreshTrendingNames(db, now));
     lastNamesRefresh = now.getTime();
   }
+  return { rescored, names };
+}
+
+export async function runOnce(db: Db) {
+  const now = new Date();
+  await syncConfig(db);
+  const due = await dueFeedRows(db, now);
+  const embed = await getEmbedder();
+  const candidates = await cachedCandidates(db, now, embed?.model);
+  let added = 0;
+  let failed = 0;
+
+  await pool(byHost(due), CONCURRENCY, async (group) => {
+    for (const feed of group) {
+      const result = await ingestFeed(db, feed, candidates, embed);
+      added += result.added;
+      if (result.failed) failed++;
+    }
+  });
+
+  const { rescored, names } = await refreshDerived(db, now, added);
   console.log(
     `[ingest] feeds=${due.length} failed=${failed} new_articles=${added} stories_rescored=${rescored} names=${names} embeddings=${embed ? "on" : "off"} took=${Math.round((Date.now() - now.getTime()) / 1000)}s`,
   );

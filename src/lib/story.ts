@@ -1,22 +1,20 @@
 import { eq } from "drizzle-orm";
-import { cacheLife } from "next/cache";
+import { cache } from "react";
 import { getDb } from "@/db/client";
 import { stories } from "@/db/schema";
 import { loadCoverage, type StoryWithCoverage } from "./queries";
 
 /**
- * One story with all its coverage. Cached for a few minutes: shared links get
- * fetched in bursts by link-preview bots, and the page and its preview image
- * both need it.
+ * One story with all its coverage, loaded once per request (the page and its
+ * metadata both need it). It was cached for a few minutes with "use cache";
+ * bring that back when Cache Components work on Cloudflare (see next.config.ts).
  */
-export async function getStory(id: number): Promise<StoryWithCoverage | null> {
-  "use cache";
-  cacheLife("minutes");
+export const getStory = cache(async (id: number): Promise<StoryWithCoverage | null> => {
   const [row] = await getDb().select().from(stories).where(eq(stories.id, id)).limit(1);
   if (!row) return null;
   const coverage = await loadCoverage([id]);
   return { ...row, coverage: coverage.get(id) ?? [] };
-}
+});
 
 /** Outlet names in coverage order, each once. */
 export function outletNames(story: StoryWithCoverage): string[] {

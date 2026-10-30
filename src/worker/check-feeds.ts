@@ -15,7 +15,7 @@ import { isAllowed, USER_AGENT } from "../lib/robots";
 const TIMEOUT_MS = 15_000;
 const STALE_DAYS = 7;
 
-interface Result {
+export interface Result {
   outlet: string;
   url: string;
   ok: boolean;
@@ -23,20 +23,24 @@ interface Result {
 }
 
 const headers = { "User-Agent": USER_AGENT };
-const robotsCache = new Map<string, Promise<string>>();
+/**
+ * Settled text with a short TTL: the feed-check Worker reuses this module across
+ * requests, and a Worker can't await a fetch that another request started.
+ */
+const robotsCache = new Map<string, { at: number; text: string }>();
+const ROBOTS_TTL_MS = 10 * 60_000;
 
-function robotsFor(origin: string): Promise<string> {
-  let robots = robotsCache.get(origin);
-  if (!robots) {
-    robots = fetch(`${origin}/robots.txt`, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
-      .then((r) => (r.ok ? r.text() : ""))
-      .catch(() => "");
-    robotsCache.set(origin, robots);
-  }
-  return robots;
+async function robotsFor(origin: string): Promise<string> {
+  const cached = robotsCache.get(origin);
+  if (cached && Date.now() - cached.at < ROBOTS_TTL_MS) return cached.text;
+  const text = await fetch(`${origin}/robots.txt`, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
+    .then((r) => (r.ok ? r.text() : ""))
+    .catch(() => "");
+  robotsCache.set(origin, { at: Date.now(), text });
+  return text;
 }
 
-async function check(outlet: string, url: string): Promise<Result> {
+export async function check(outlet: string, url: string): Promise<Result> {
   try {
     const { origin, pathname, search } = new URL(url);
     if (!isAllowed(await robotsFor(origin), pathname + search)) return { outlet, url, ok: false, detail: "blocked by robots.txt" };
@@ -56,16 +60,24 @@ async function check(outlet: string, url: string): Promise<Result> {
   }
 }
 
-async function main() {
-  const candidates = process.argv.slice(2).filter((a) => a.startsWith("http"));
-  const jobs =
-    candidates.length > 0
-      ? candidates.map((url) => () => check(new URL(url).hostname, url))
-      : OUTLETS.flatMap((o) => o.feeds.map((f) => () => check(o.name, f.url)));
+/** Every configured feed, or just the given URLs. */
+export function feedJobs(urls: string[] = []): { outlet: string; url: string }[] {
+  return urls.length > 0
+    ? urls.map((url) => ({ outlet: URL.parse(url)?.hostname ?? url, url }))
+    : OUTLETS.flatMap((o) => o.feeds.map((f) => ({ outlet: o.name, url: f.url })));
+}
+
+/** Six at a time, which is also the most open connections a Cloudflare Worker may hold. */
+export async function checkAll(jobs: { outlet: string; url: string }[]): Promise<Result[]> {
   const results: Result[] = [];
   for (let i = 0; i < jobs.length; i += 6) {
-    results.push(...(await Promise.all(jobs.slice(i, i + 6).map((j) => j()))));
+    results.push(...(await Promise.all(jobs.slice(i, i + 6).map((j) => check(j.outlet, j.url)))));
   }
+  return results;
+}
+
+async function main() {
+  const results = await checkAll(feedJobs(process.argv.slice(2).filter((a) => a.startsWith("http"))));
   for (const r of results) console.log(`${r.ok ? "ok  " : "FAIL"} ${r.outlet.padEnd(26)} ${r.detail.padEnd(32)} ${r.url}`);
   const failed = results.filter((r) => !r.ok).length;
   console.log(`\n${results.length - failed}/${results.length} feeds healthy`);
