@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { StoryCard, StoryList } from "./StoryCard";
 import { outboundUrl } from "@/lib/normalize";
-import { parseFilters, timeAgo, type SearchParams } from "@/lib/filters";
+import { parseFilters, timeAgo, withParam, type SearchParams } from "@/lib/filters";
 import { getLatest, getLatestArticleId, getTopStories, type FeedFilters } from "@/lib/queries";
 import { storyPath } from "@/lib/slug";
 import { createHash } from "node:crypto";
@@ -75,8 +75,16 @@ export async function TopStories({
     return loadError(err);
   }
 
-  // Pages with a Latest view of their own link the rail's "See all" there.
-  const latestHref = pathname === "/" ? "/latest" : topic || country || entity ? `${pathname}?view=latest` : undefined;
+  // "See all" links carry the feed's filters, and only exist where the target page can show the same scope.
+  const region = filters.region && { region: filters.region };
+  const latestHref =
+    pathname === "/" ? withParam("/latest", { ...region }, "view", undefined)
+    : topic || country || entity ? withParam(pathname, { ...region }, "view", "latest")
+    : undefined;
+  const developingHref =
+    topic || country || mentions
+      ? undefined
+      : withParam("/developing", { ...region }, "hours", filters.hours === 24 ? undefined : String(filters.hours));
 
   return (
     // data-wide lets the page widen on large screens to fit the rail (see the layout).
@@ -112,7 +120,7 @@ export async function TopStories({
       )}
     </div>
       <Suspense fallback={null}>
-        <Rail filters={filters} latestHref={latestHref} showDeveloping={!developing} />
+        <Rail filters={filters} latestHref={latestHref} developingHref={developingHref} showDeveloping={!developing} />
       </Suspense>
     </div>
   );
@@ -130,10 +138,12 @@ const RAIL_DEVELOPING = 5;
 async function Rail({
   filters,
   latestHref,
+  developingHref,
   showDeveloping,
 }: {
   filters: FeedFilters;
   latestHref?: string;
+  developingHref?: string;
   showDeveloping: boolean;
 }) {
   let latest, developing;
@@ -155,9 +165,11 @@ async function Rail({
         <section>
           <h2 className={heading}>
             <span className="text-warn">Developing</span>
-            <Link href="/developing" className="font-normal normal-case tracking-normal hover:text-accent">
-              See all
-            </Link>
+            {developingHref && (
+              <Link href={developingHref} className="font-normal normal-case tracking-normal hover:text-accent">
+                See all
+              </Link>
+            )}
           </h2>
           <ul className="space-y-2.5 text-sm">
             {developing.map((s) => (

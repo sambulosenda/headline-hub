@@ -34,12 +34,12 @@ export function SiteHeader() {
               Following
             </NavLink>
             {/* No room for the search box on phones: an icon opens the search page, which focuses its own box. */}
-            <Link href="/search" aria-label="Search" title="Search" className={`sm:hidden ${view}`}>
+            <NavLink href="/search" aria-label="Search" title="Search" className={`sm:hidden ${view}`} activeClassName="text-accent">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                 <circle cx="8.5" cy="8.5" r="5" />
                 <path d="M12.5 12.5l4 4" strokeLinecap="round" />
               </svg>
-            </Link>
+            </NavLink>
             <NavLink href="/saved" aria-label="Saved stories" title="Saved stories" className={view} activeClassName="text-accent">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                 <path d="M5.5 3.5h9v13l-4.5-3-4.5 3z" strokeLinejoin="round" />
