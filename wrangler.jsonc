@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "headline-hub",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [
+    // Self-reference so OpenNext can revalidate pages; must match "name".
+    { "binding": "WORKER_SELF_REFERENCE", "service": "headline-hub" }
+  ],
+  "r2_buckets": [
+    // Create once: npx wrangler r2 bucket create headline-hub-opennext-cache
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "headline-hub-opennext-cache" }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      // Create once: npx wrangler hyperdrive create headline-hub --connection-string="<Neon URL>", then paste its id here.
+      "id": "00000000000000000000000000000000",
+      // Used by `npm run cf:preview` instead of Hyperdrive.
+      "localConnectionString": "postgres://headlines:headlines@localhost:5432/headlines"
+    }
+  ],
+  "observability": { "enabled": true }
+}

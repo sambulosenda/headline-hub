@@ -17,10 +17,15 @@
     "notify": "tsx --env-file-if-exists=.env.local src/worker/notify.ts",
     "notify:watch": "tsx --env-file-if-exists=.env.local src/worker/notify.ts --watch",
     "check-feeds": "tsx src/worker/check-feeds.ts",
-    "cf:feed-check:deploy": "wrangler deploy --config cloudflare/feed-check/wrangler.jsonc"
+    "cf:feed-check:deploy": "wrangler deploy --config cloudflare/feed-check/wrangler.jsonc",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.2",
+    "@opennextjs/cloudflare": "^1.20.14",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.3",
     "postgres": "^4.0.0",
