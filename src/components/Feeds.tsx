@@ -125,7 +125,7 @@ export async function LatestHeadlines({
                 {timeAgo(a.publishedAt)}
               </time>
               <div className="min-w-0">
-                <a href={outboundUrl(a.url)} className="font-medium hover:underline" target="_blank" rel="noopener">
+                <a href={outboundUrl(a.url)} data-outbound="1" className="font-medium hover:underline" target="_blank" rel="noopener">
                   {a.title}
                 </a>
                 <p className="text-sm text-muted">

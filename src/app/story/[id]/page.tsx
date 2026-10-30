@@ -100,7 +100,7 @@ async function StoryView({ params }: PageProps<"/story/[id]">) {
               <span className="font-medium text-foreground">{a.outletName}</span> ·{" "}
               <time dateTime={a.publishedAt.toISOString()}>{timeAgo(a.publishedAt)}</time>
             </p>
-            <a href={outboundUrl(a.url)} className="font-medium hover:underline" target="_blank" rel="noopener">
+            <a href={outboundUrl(a.url)} data-outbound="1" className="font-medium hover:underline" target="_blank" rel="noopener">
               {a.title}
             </a>
             {a.summary && <p className="mt-0.5 line-clamp-2 text-sm text-muted">{a.summary}</p>}

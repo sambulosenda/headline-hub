@@ -35,7 +35,7 @@ export function StoryCard({
             <span>{timeAgo(story.lastSeenAt)}</span>
           </div>
           <h2 className="text-lg font-semibold leading-snug text-balance">
-            <a href={outboundUrl(lead.url)} className="hover:underline" target="_blank" rel="noopener">
+            <a href={outboundUrl(lead.url)} data-outbound="1" className="hover:underline" target="_blank" rel="noopener">
               {story.title}
             </a>
           </h2>
@@ -68,7 +68,7 @@ export function StoryCard({
             <ul className="mt-2 space-y-2 border-l border-line pl-3">
               {rest.map((a) => (
                 <li key={a.id}>
-                  <a href={outboundUrl(a.url)} className="hover:underline" target="_blank" rel="noopener">
+                  <a href={outboundUrl(a.url)} data-outbound="1" className="hover:underline" target="_blank" rel="noopener">
                     {a.title}
                   </a>
                   <span className="text-muted">
