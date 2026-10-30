@@ -80,21 +80,6 @@ export const UK_OUTLETS: OutletConfig[] = [
     ],
   },
   {
-    id: "telegraph",
-    name: "The Telegraph",
-    homepage: "https://www.telegraph.co.uk",
-    region: "uk",
-    kind: "national",
-    quality: 0.85,
-    feeds: [
-      { url: "https://www.telegraph.co.uk/news/rss.xml", topics: ["uk"] },
-      { url: "https://www.telegraph.co.uk/politics/rss.xml", topics: ["uk"] },
-      { url: "https://www.telegraph.co.uk/world-news/rss.xml", topics: ["world"] },
-      { url: "https://www.telegraph.co.uk/technology/rss.xml", topics: ["tech"] },
-      { url: "https://www.telegraph.co.uk/sport/rss.xml", topics: ["sport"] },
-    ],
-  },
-  {
     id: "mirror",
     name: "Daily Mirror",
     homepage: "https://www.mirror.co.uk",
@@ -169,18 +154,6 @@ export const UK_OUTLETS: OutletConfig[] = [
     feeds: [{ url: "https://www.thisismoney.co.uk/money/index.rss", topics: ["business"] }],
   },
   {
-    id: "the-sun",
-    name: "The Sun",
-    homepage: "https://www.thesun.co.uk",
-    region: "uk",
-    kind: "national",
-    quality: 0.55,
-    feeds: [
-      { url: "https://www.thesun.co.uk/news/feed/", topics: ["uk"] },
-      { url: "https://www.thesun.co.uk/sport/feed/", topics: ["sport"] },
-    ],
-  },
-  {
     id: "metro",
     name: "Metro",
     homepage: "https://metro.co.uk",
@@ -200,15 +173,6 @@ export const UK_OUTLETS: OutletConfig[] = [
       { url: "https://inews.co.uk/category/news/politics/feed", topics: ["uk"] },
       { url: "https://inews.co.uk/category/sport/feed", topics: ["sport"] },
     ],
-  },
-  {
-    id: "spectator",
-    name: "The Spectator",
-    homepage: "https://www.spectator.co.uk",
-    region: "uk",
-    kind: "specialist",
-    quality: 0.75,
-    feeds: [{ url: "https://www.spectator.co.uk/feed", topics: ["uk"] }],
   },
   {
     id: "new-statesman",
@@ -391,15 +355,6 @@ export const UK_OUTLETS: OutletConfig[] = [
     feeds: [{ url: "https://www.computerweekly.com/rss/All-Computer-Weekly-content.xml", topics: ["tech"] }],
   },
   {
-    id: "uktn",
-    name: "UKTN",
-    homepage: "https://www.uktech.news",
-    region: "uk",
-    kind: "trade",
-    quality: 0.7,
-    feeds: [{ url: "https://www.uktech.news/feed", topics: ["tech", "business"] }],
-  },
-  {
     id: "sifted",
     name: "Sifted",
     homepage: "https://sifted.eu",
@@ -437,15 +392,6 @@ export const UK_OUTLETS: OutletConfig[] = [
   },
   // UK sport.
   {
-    id: "talksport",
-    name: "talkSPORT",
-    homepage: "https://talksport.com",
-    region: "uk",
-    kind: "broadcaster",
-    quality: 0.65,
-    feeds: [{ url: "https://talksport.com/feed/", topics: ["sport", "football"] }],
-  },
-  {
     id: "football-london",
     name: "football.london",
     homepage: "https://www.football.london",
@@ -479,7 +425,7 @@ export const UK_OUTLETS: OutletConfig[] = [
     region: "uk",
     kind: "specialist",
     quality: 0.65,
-    feeds: [{ url: "https://www.planetrugby.com/feed", topics: ["sport"] }],
+    feeds: [{ url: "https://www.planetrugby.com/rss", topics: ["sport"] }],
   },
   {
     id: "planet-f1",
@@ -488,7 +434,7 @@ export const UK_OUTLETS: OutletConfig[] = [
     region: "uk",
     kind: "specialist",
     quality: 0.6,
-    feeds: [{ url: "https://www.planetf1.com/feed", topics: ["sport"] }],
+    feeds: [{ url: "https://www.planetf1.com/rss", topics: ["sport"] }],
   },
   {
     id: "autosport",
@@ -516,14 +462,5 @@ export const UK_OUTLETS: OutletConfig[] = [
     kind: "specialist",
     quality: 0.8,
     feeds: [{ url: "https://www.espncricinfo.com/rss/content/story/feeds/0.xml", topics: ["sport"] }],
-  },
-  {
-    id: "90min",
-    name: "90min",
-    homepage: "https://www.90min.com",
-    region: "uk",
-    kind: "specialist",
-    quality: 0.55,
-    feeds: [{ url: "https://www.90min.com/posts.rss", topics: ["football"] }],
   },
 ];

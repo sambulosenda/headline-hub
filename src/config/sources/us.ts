@@ -18,21 +18,6 @@ export const US_OUTLETS: OutletConfig[] = [
       { url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", topics: ["business"] },
       { url: "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml", topics: ["tech"] },
       { url: "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml", topics: ["science"] },
-      { url: "https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml", topics: ["sport"] },
-    ],
-  },
-  {
-    id: "washington-post",
-    name: "The Washington Post",
-    homepage: "https://www.washingtonpost.com",
-    region: "us",
-    kind: "national",
-    quality: 0.95,
-    feeds: [
-      { url: "https://feeds.washingtonpost.com/rss/world", topics: ["world"] },
-      { url: "https://feeds.washingtonpost.com/rss/national", topics: ["world"] },
-      { url: "https://feeds.washingtonpost.com/rss/politics", topics: ["world"] },
-      { url: "https://feeds.washingtonpost.com/rss/business", topics: ["business"] },
     ],
   },
   {
@@ -61,21 +46,6 @@ export const US_OUTLETS: OutletConfig[] = [
       { url: "https://feeds.bloomberg.com/politics/news.rss", topics: ["world"] },
       { url: "https://feeds.bloomberg.com/technology/news.rss", topics: ["tech"] },
       { url: "https://feeds.bloomberg.com/economics/news.rss", topics: ["business"] },
-    ],
-  },
-  {
-    id: "cnn",
-    name: "CNN",
-    homepage: "https://edition.cnn.com",
-    region: "us",
-    kind: "broadcaster",
-    quality: 0.85,
-    feeds: [
-      { url: "http://rss.cnn.com/rss/edition.rss", topics: ["world"] },
-      { url: "http://rss.cnn.com/rss/edition_world.rss", topics: ["world"] },
-      { url: "http://rss.cnn.com/rss/edition_africa.rss", topics: ["africa"] },
-      { url: "http://rss.cnn.com/rss/money_latest.rss", topics: ["business"] },
-      { url: "http://rss.cnn.com/rss/edition_technology.rss", topics: ["tech"] },
     ],
   },
   {
@@ -144,7 +114,6 @@ export const US_OUTLETS: OutletConfig[] = [
       { url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", topics: ["world", "business"] },
       { url: "https://www.cnbc.com/id/10001147/device/rss/rss.html", topics: ["business"] },
       { url: "https://www.cnbc.com/id/19854910/device/rss/rss.html", topics: ["tech"] },
-      { url: "https://www.cnbc.com/id/10000664/device/rss/rss.html", topics: ["business"] },
     ],
   },
   {
@@ -189,15 +158,6 @@ export const US_OUTLETS: OutletConfig[] = [
     kind: "specialist",
     quality: 0.75,
     feeds: [{ url: "https://thehill.com/feed/", topics: ["world"] }],
-  },
-  {
-    id: "axios",
-    name: "Axios",
-    homepage: "https://www.axios.com",
-    region: "us",
-    kind: "national",
-    quality: 0.8,
-    feeds: [{ url: "https://api.axios.com/feed/", topics: ["world", "business"] }],
   },
   {
     id: "vox",
@@ -248,15 +208,6 @@ export const US_OUTLETS: OutletConfig[] = [
     ],
   },
   {
-    id: "usa-today",
-    name: "USA Today",
-    homepage: "https://www.usatoday.com",
-    region: "us",
-    kind: "national",
-    quality: 0.75,
-    feeds: [{ url: "http://rssfeeds.usatoday.com/usatoday-NewsTopStories", topics: ["world"] }],
-  },
-  {
     id: "upi",
     name: "UPI",
     homepage: "https://www.upi.com",
@@ -272,16 +223,7 @@ export const US_OUTLETS: OutletConfig[] = [
     region: "us",
     kind: "broadcaster",
     quality: 0.8,
-    feeds: [{ url: "https://www.voanews.com/api/zq$omekvi_", topics: ["world"] }],
-  },
-  {
-    id: "rferl",
-    name: "Radio Free Europe/Radio Liberty",
-    homepage: "https://www.rferl.org",
-    region: "us",
-    kind: "broadcaster",
-    quality: 0.8,
-    feeds: [{ url: "https://www.rferl.org/api/zrqiteuuir", topics: ["world"] }],
+    feeds: [{ url: "https://www.voanews.com/api/", topics: ["world"] }],
   },
   // Business.
   {
@@ -303,15 +245,6 @@ export const US_OUTLETS: OutletConfig[] = [
     feeds: [{ url: "https://feeds.businessinsider.com/custom/all", topics: ["business", "tech"] }],
   },
   {
-    id: "yahoo-finance",
-    name: "Yahoo Finance",
-    homepage: "https://finance.yahoo.com",
-    region: "us",
-    kind: "specialist",
-    quality: 0.65,
-    feeds: [{ url: "https://finance.yahoo.com/news/rssindex", topics: ["business"] }],
-  },
-  {
     id: "fast-company",
     name: "Fast Company",
     homepage: "https://www.fastcompany.com",
@@ -319,15 +252,6 @@ export const US_OUTLETS: OutletConfig[] = [
     kind: "specialist",
     quality: 0.7,
     feeds: [{ url: "https://www.fastcompany.com/latest/rss", topics: ["business", "tech"] }],
-  },
-  {
-    id: "quartz",
-    name: "Quartz",
-    homepage: "https://qz.com",
-    region: "us",
-    kind: "specialist",
-    quality: 0.65,
-    feeds: [{ url: "https://qz.com/rss", topics: ["business"] }],
   },
   {
     id: "forbes",
@@ -365,15 +289,6 @@ export const US_OUTLETS: OutletConfig[] = [
     kind: "specialist",
     quality: 0.7,
     feeds: [{ url: "https://www.cnet.com/rss/news/", topics: ["tech"] }],
-  },
-  {
-    id: "venturebeat",
-    name: "VentureBeat",
-    homepage: "https://venturebeat.com",
-    region: "us",
-    kind: "trade",
-    quality: 0.7,
-    feeds: [{ url: "https://venturebeat.com/feed/", topics: ["tech", "business"] }],
   },
   {
     id: "gizmodo",
@@ -642,6 +557,6 @@ export const US_OUTLETS: OutletConfig[] = [
     region: "us",
     kind: "specialist",
     quality: 0.6,
-    feeds: [{ url: "https://www.sbnation.com/rss/current", topics: ["sport"] }],
+    feeds: [{ url: "https://www.sbnation.com/rss/index.xml", topics: ["sport"] }],
   },
 ];

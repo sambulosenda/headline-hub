@@ -434,17 +434,6 @@ const CORE_OUTLETS: OutletConfig[] = [
     ],
   },
   {
-    id: "the-east-african",
-    name: "The EastAfrican",
-    homepage: "https://www.theeastafrican.co.ke",
-    region: "africa",
-    kind: "national",
-    quality: 0.85,
-    feeds: [
-      { url: "https://www.theeastafrican.co.ke/rss.xml", topics: ["africa"] },
-    ],
-  },
-  {
     id: "african-arguments",
     name: "African Arguments",
     homepage: "https://africanarguments.org",

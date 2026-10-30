@@ -3,18 +3,6 @@ import type { OutletConfig } from "../outlets";
 /** International publishers outside the UK, US and Africa. */
 export const INTL_OUTLETS: OutletConfig[] = [
   {
-    id: "un-news",
-    name: "UN News",
-    homepage: "https://news.un.org",
-    region: "intl",
-    kind: "specialist",
-    quality: 0.85,
-    feeds: [
-      { url: "https://news.un.org/feed/subscribe/en/news/all/rss.xml", topics: ["world"] },
-      { url: "https://news.un.org/feed/subscribe/en/news/region/africa/feed/rss.xml", topics: ["africa"] },
-    ],
-  },
-  {
     id: "the-new-humanitarian",
     name: "The New Humanitarian",
     homepage: "https://www.thenewhumanitarian.org",
@@ -39,7 +27,7 @@ export const INTL_OUTLETS: OutletConfig[] = [
     region: "intl",
     kind: "specialist",
     quality: 0.85,
-    feeds: [{ url: "https://restofworld.org/feed/latest/", topics: ["tech", "world"] }],
+    feeds: [{ url: "https://restofworld.org/feed/", topics: ["tech", "world"] }],
   },
   {
     id: "the-next-web",
@@ -145,15 +133,6 @@ export const INTL_OUTLETS: OutletConfig[] = [
     feeds: [{ url: "https://meduza.io/rss/en/all", topics: ["world"] }],
   },
   {
-    id: "balkan-insight",
-    name: "Balkan Insight",
-    homepage: "https://balkaninsight.com",
-    region: "intl",
-    kind: "specialist",
-    quality: 0.75,
-    feeds: [{ url: "https://balkaninsight.com/feed/", topics: ["world"] }],
-  },
-  {
     id: "notes-from-poland",
     name: "Notes from Poland",
     homepage: "https://notesfrompoland.com",
@@ -169,18 +148,9 @@ export const INTL_OUTLETS: OutletConfig[] = [
     region: "intl",
     kind: "specialist",
     quality: 0.75,
-    feeds: [{ url: "https://euobserver.com/rss.xml", topics: ["world"] }],
+    feeds: [{ url: "https://euobserver.com/feed/", topics: ["world"] }],
   },
   // Middle East.
-  {
-    id: "times-of-israel",
-    name: "The Times of Israel",
-    homepage: "https://www.timesofisrael.com",
-    region: "intl",
-    kind: "national",
-    quality: 0.75,
-    feeds: [{ url: "https://www.timesofisrael.com/feed/", topics: ["world"] }],
-  },
   {
     id: "middle-east-eye",
     name: "Middle East Eye",
@@ -340,7 +310,6 @@ export const INTL_OUTLETS: OutletConfig[] = [
     quality: 0.9,
     feeds: [
       { url: "https://www.abc.net.au/news/feed/51120/rss.xml", topics: ["world"] },
-      { url: "https://www.abc.net.au/news/feed/52278/rss.xml", topics: ["world"] },
     ],
   },
   {
@@ -368,20 +337,6 @@ export const INTL_OUTLETS: OutletConfig[] = [
     ],
   },
   // The Americas outside the US.
-  {
-    id: "cbc",
-    name: "CBC News",
-    homepage: "https://www.cbc.ca/news",
-    region: "intl",
-    kind: "broadcaster",
-    quality: 0.9,
-    feeds: [
-      { url: "https://www.cbc.ca/webfeed/rss/rss-topstories", topics: ["world"] },
-      { url: "https://www.cbc.ca/webfeed/rss/rss-world", topics: ["world"] },
-      { url: "https://www.cbc.ca/webfeed/rss/rss-business", topics: ["business"] },
-      { url: "https://www.cbc.ca/webfeed/rss/rss-technology", topics: ["tech"] },
-    ],
-  },
   {
     id: "globe-and-mail",
     name: "The Globe and Mail",
