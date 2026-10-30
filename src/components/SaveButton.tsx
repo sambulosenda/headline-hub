@@ -10,11 +10,11 @@ export function SaveButton({ storyId, saved, iconOnly = false }: { storyId: numb
         aria-pressed={saved}
         aria-label={iconOnly ? (saved ? "Saved, tap to remove" : "Save story") : undefined}
         title={iconOnly ? label : undefined}
-        className={`inline-flex items-center gap-1 ${iconOnly ? "size-9 justify-center rounded-full hover:bg-background" : ""} ${
+        className={`inline-flex items-center gap-1 ${iconOnly ? "size-11 justify-center rounded-lg hover:bg-fill sm:size-8" : ""} ${
           saved ? "text-accent" : "text-muted hover:text-foreground"
         }`}
       >
-        <svg viewBox="0 0 20 20" width={iconOnly ? 18 : 14} height={iconOnly ? 18 : 14} fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" aria-hidden>
+        <svg viewBox="0 0 20 20" width={iconOnly ? 17 : 14} height={iconOnly ? 17 : 14} fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" aria-hidden>
           <path d="M5.5 3.5h9v13l-4.5-3-4.5 3z" strokeLinejoin="round" />
         </svg>
         {!iconOnly && label}

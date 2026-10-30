@@ -157,29 +157,29 @@ async function Rail({
     console.error(err);
     return null;
   }
-  const heading = "mb-2 flex items-baseline justify-between text-xs font-semibold uppercase tracking-wide text-muted";
+  const heading = "mb-1 flex items-baseline justify-between border-b-2 border-foreground pb-2.5 text-[0.9375rem] font-bold";
 
   return (
-    <aside className="hidden space-y-6 self-start lg:sticky lg:top-28 lg:block" aria-label="More headlines">
+    <aside className="hidden space-y-6 self-start lg:sticky lg:top-32 lg:block" aria-label="More headlines">
       {developing.length > 0 && (
         <section>
           <h2 className={heading}>
-            <span className="text-warn">Developing</span>
+            <span>Developing</span>
             {developingHref && (
-              <Link href={developingHref} className="font-normal normal-case tracking-normal hover:text-accent">
+              <Link href={developingHref} className="text-[0.8125rem] font-medium text-muted hover:text-foreground">
                 See all
               </Link>
             )}
           </h2>
-          <ul className="space-y-2.5 text-sm">
+          <ul className="divide-y divide-line text-sm">
             {developing.map((s) => (
-              <li key={s.id}>
-                <Link href={storyPath(s.id, s.title)} className="font-medium leading-snug hover:underline">
+              <li key={s.id} className="py-3">
+                <Link href={storyPath(s.id, s.title)} className="text-[0.9375rem] leading-snug font-semibold hover:underline">
                   {s.title}
                 </Link>
-                <p className="text-xs text-muted">
-                  {s.outletCount} sources
-                  {s.recentOutlets > 0 && ` · ${s.recentOutlets} joined in the last hour`}
+                <p className="mt-0.5 text-[0.8125rem] text-subtle">
+                  {s.outletCount} outlets
+                  {s.recentOutlets > 0 && <span className="text-warn"> · +{s.recentOutlets} in the last hour</span>}
                 </p>
               </li>
             ))}
@@ -191,20 +191,23 @@ async function Rail({
           <h2 className={heading}>
             <span>Latest</span>
             {latestHref && (
-              <Link href={latestHref} className="font-normal normal-case tracking-normal hover:text-accent">
+              <Link href={latestHref} className="text-[0.8125rem] font-medium text-muted hover:text-foreground">
                 See all
               </Link>
             )}
           </h2>
-          <ul className="space-y-2.5 text-sm">
+          <ul className="divide-y divide-line text-sm">
             {latest.map((a) => (
-              <li key={a.id}>
-                <a href={outboundUrl(a.url)} data-outbound="1" className="leading-snug hover:underline" target="_blank" rel="noopener">
-                  {a.title}
-                </a>
-                <p className="text-xs text-muted">
-                  {a.outletName} · {timeAgo(a.publishedAt)}
-                </p>
+              <li key={a.id} className="flex gap-3 py-2.5">
+                <time className="w-9 shrink-0 pt-0.5 font-mono text-xs tabular-nums text-muted" dateTime={a.publishedAt.toISOString()}>
+                  {timeAgo(a.publishedAt)}
+                </time>
+                <div className="min-w-0">
+                  <a href={outboundUrl(a.url)} data-outbound="1" className="leading-snug hover:underline" target="_blank" rel="noopener">
+                    {a.title}
+                  </a>
+                  <p className="mt-0.5 text-[0.8125rem] text-muted">{a.outletName}</p>
+                </div>
               </li>
             ))}
           </ul>
@@ -254,17 +257,17 @@ export async function LatestHeadlines({
       {items.length === 0 ? (
         <Notice title={empty?.title ?? "No headlines yet"} body={empty?.body ?? "Run the ingest worker to pull in feeds."} />
       ) : (
-        <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
+        <ul className="divide-y divide-line">
           {items.map((a) => (
-            <li key={a.id} className="flex items-baseline gap-3 px-4 py-3">
-              <time className="w-10 shrink-0 text-xs tabular-nums text-muted" dateTime={a.publishedAt.toISOString()}>
+            <li key={a.id} className="flex items-baseline gap-3 py-3">
+              <time className="w-10 shrink-0 font-mono text-xs tabular-nums text-muted" dateTime={a.publishedAt.toISOString()}>
                 {timeAgo(a.publishedAt)}
               </time>
               <div className="min-w-0">
                 <a href={outboundUrl(a.url)} data-outbound="1" className="font-medium hover:underline" target="_blank" rel="noopener">
                   {a.title}
                 </a>
-                <p className="text-sm text-muted">
+                <p className="text-[0.8125rem] text-subtle">
                   {a.outletName}
                   {a.storyOutletCount > 1 && ` · ${a.storyOutletCount} sources on this story`}
                 </p>
@@ -281,7 +284,7 @@ export function FeedSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading">
       {Array.from({ length: 6 }, (_, i) => (
-        <div key={i} className="h-20 animate-pulse rounded-xl border border-line bg-surface" />
+        <div key={i} className="h-24 animate-pulse border-b border-line" />
       ))}
     </div>
   );
