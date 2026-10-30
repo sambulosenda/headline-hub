@@ -16,7 +16,8 @@
     "tag-countries": "tsx --env-file-if-exists=.env.local src/worker/tag-countries.ts",
     "notify": "tsx --env-file-if-exists=.env.local src/worker/notify.ts",
     "notify:watch": "tsx --env-file-if-exists=.env.local src/worker/notify.ts --watch",
-    "check-feeds": "tsx src/worker/check-feeds.ts"
+    "check-feeds": "tsx src/worker/check-feeds.ts",
+    "cf:feed-check:deploy": "wrangler deploy --config cloudflare/feed-check/wrangler.jsonc"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.2",
@@ -40,6 +41,7 @@
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.156.0"
   }
 }
