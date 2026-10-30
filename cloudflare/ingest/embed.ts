@@ -4,10 +4,11 @@ import type { Thresholds } from "../../src/lib/similarity";
 export const WORKERS_AI_MODEL = "@cf/baai/bge-small-en-v1.5";
 
 /**
- * Starting cut-offs for bge-small, which scores pairs higher than MiniLM does.
- * Guesses until calibrated against a day of real headlines (see README.md).
+ * Cut-offs for bge-small, which scores pairs higher than MiniLM does. From
+ * `npm run calibrate-embeddings` on 2,581 headlines (30 Oct 2026): closest to
+ * MiniLM's stories, with pair precision 0.65, recall 0.77, F1 0.71.
  */
-export const BGE_SMALL_THRESHOLDS: Thresholds = { strong: 0.9, semantic: 0.8, assist: 0.7 };
+export const BGE_SMALL_THRESHOLDS: Thresholds = { strong: 0.88, semantic: 0.8, assist: 0.68 };
 
 interface Ai {
   run(model: string, input: { text: string[] }): Promise<unknown>;

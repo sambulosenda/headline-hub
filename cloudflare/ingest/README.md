@@ -18,7 +18,7 @@ embedding match needs shared words anyway, so the result is nearly identical.
 ## Before switching over
 
 1. **Calibrate the thresholds.** bge-small scores pairs higher than MiniLM, so the
-   cut-offs in `embed.ts` are guesses. On the MacBook, with the local database
+   cut-offs in `embed.ts` were calibrated once (30 Oct 2026). To redo it, on the MacBook, with the local database
    holding a few hours of real headlines, run:
 
    ```sh
