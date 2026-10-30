@@ -25,5 +25,7 @@ export async function getSitemapNames() {
     .select({ slug: trendingNames.slug, lastSeenAt: trendingNames.lastSeenAt })
     .from(trendingNames)
     .where(and(eq(trendingNames.kind, "auto"), gt(trendingNames.lastSeenAt, since)))
+    // Every refresh stamps the same lastSeenAt, so keep the newest names by when they first appeared.
+    .orderBy(desc(trendingNames.firstSeenAt))
     .limit(1000);
 }

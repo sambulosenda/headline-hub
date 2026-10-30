@@ -15,7 +15,8 @@ export default async function ContactPage({ searchParams }: PageProps<"/contact"
   const { about, url } = await searchParams;
   const reason = typeof about === "string" && isContactReason(about) ? about : undefined;
   // Only our own pages are prefilled, so a crafted link can't plant someone else's URL in the form.
-  const ownUrl = typeof url === "string" && url.startsWith("/") && !url.startsWith("//") ? url : undefined;
+  // A backslash ("/\host") or an embedded tab or newline also parses as another host, so only a plain path passes.
+  const ownUrl = typeof url === "string" && /^\/(?![/\\])[^\s\\]*$/.test(url) ? url : undefined;
 
   return (
     <div className="max-w-xl">

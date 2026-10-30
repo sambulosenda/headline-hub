@@ -41,7 +41,7 @@ export function shareCard({ title, badge, footer }: ShareCard): ImageResponse {
           {first}
           <span style={{ color: "#7aa7ff" }}>{second}</span>
         </div>
-        <div style={{ display: "flex", fontSize: fontSize(shown), fontWeight: 700, lineHeight: 1.15 }}>{shown}</div>
+        <div style={{ display: "flex", wordBreak: "break-word", fontSize: fontSize(shown), fontWeight: 700, lineHeight: 1.15 }}>{shown}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 28, color: "#a3a39d" }}>
           {badge && (
             <span

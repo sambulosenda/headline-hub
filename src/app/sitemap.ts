@@ -33,23 +33,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Built per request so new stories show up; outside the try so its prerender signal isn't swallowed.
   await connection();
-  try {
-    const [stories, names] = await Promise.all([getSitemapStories(), getSitemapNames()]);
-    const listed = new Set(ENTITIES.map((e) => e.slug));
-    return [
-      ...fixed,
-      ...stories.map((s) => ({
-        url: absoluteUrl(storyPath(s.id, s.title)),
-        lastModified: s.lastSeenAt,
-        changeFrequency: "hourly" as const,
-        priority: 0.6,
-      })),
-      ...names
-        .filter((n) => !listed.has(n.slug))
-        .map((n) => ({ url: absoluteUrl(`/entity/${n.slug}`), lastModified: n.lastSeenAt, changeFrequency: "daily" as const, priority: 0.4 })),
-    ];
-  } catch (err) {
-    console.error(err);
-    return fixed;
-  }
+  // Either query failing still leaves the other's URLs in.
+  const [stories, names] = await Promise.allSettled([getSitemapStories(), getSitemapNames()]);
+  for (const r of [stories, names]) if (r.status === "rejected") console.error(r.reason);
+  const listed = new Set(ENTITIES.map((e) => e.slug));
+  return [
+    ...fixed,
+    ...(stories.status === "fulfilled" ? stories.value : []).map((s) => ({
+      url: absoluteUrl(storyPath(s.id, s.title)),
+      lastModified: s.lastSeenAt,
+      changeFrequency: "hourly" as const,
+      priority: 0.6,
+    })),
+    ...(names.status === "fulfilled" ? names.value : [])
+      .filter((n) => !listed.has(n.slug))
+      .map((n) => ({ url: absoluteUrl(`/entity/${n.slug}`), lastModified: n.lastSeenAt, changeFrequency: "daily" as const, priority: 0.4 })),
+  ];
 }

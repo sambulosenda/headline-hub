@@ -22,8 +22,8 @@ export default function PrivacyPage() {
       <Prose>
         <p>
           The short version: {SITE.name} has no ads, no third-party trackers and no tracking cookies. You can read
-          everything without an account. If you make one, we keep your email address and the settings you choose, and
-          nothing else about you.
+          everything without an account. If you make one, we keep your email address, the settings you choose, your
+          saved stories and a note of which alerts we&apos;ve sent you.
         </p>
 
         <h2>Counting visits</h2>
@@ -54,7 +54,8 @@ export default function PrivacyPage() {
         <h2>If you sign in</h2>
         <p>
           We sign you in with a link sent to your email, so there is no password to store. We keep your email address,
-          your hidden topics and outlets, the names you follow, your saved stories and your email choices. Sign-in links
+          your hidden topics and outlets, the names you follow, your saved stories, your email choices and which breaking-news alerts we&apos;ve sent you, so you never get the
+          same one twice. Sign-in links
           and sessions are stored only as hashes. Daily digests and breaking-news alerts are off until you turn them on,
           and every email has a link to stop them.
         </p>
