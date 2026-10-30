@@ -53,6 +53,12 @@ Publishers can offer their RSS or Atom feed at `/submit` (linked in the footer).
 
 Signed-in accounts listed in `ADMIN_EMAILS` see the queue at `/admin/submissions` (everyone else gets a 404), with the check results and latest headlines. Approving a feed shows a ready-to-paste entry for `src/config/outlets.ts`; review its `kind` and `quality`, add it, then restart `ingest:watch`. Nothing is ingested until it is in the config. For local testing against a feed on your own machine, set `ALLOW_PRIVATE_FEEDS=1` to skip the public-address check.
 
+## Analytics
+
+Visits are counted in your own Postgres, with no third-party service and no cookies. Each page view and each click through to a publisher is sent to `/api/collect`. A visitor is identified only by a hash of IP address, browser and a random salt that is replaced every day, so the same person can't be followed from one day to the next and the IP address is never stored. Bots, and browsers with Do Not Track or Global Privacy Control on, are not counted, nor are `/admin`, `/api` and `/auth` pages. Events older than 400 days are deleted automatically.
+
+Accounts in `ADMIN_EMAILS` see the dashboard at `/admin/analytics`: visitors, page views, clicks to publishers (matched to outlets and stories), top pages, referring sites and devices for the last 7, 30 or 90 days. Set `ANALYTICS=off` to stop counting.
+
 ## Scripts
 
 | Script | What it does |

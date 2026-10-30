@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist } from "next/font/google";
+import { Analytics } from "@/components/Analytics";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
@@ -31,8 +33,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Link href="/submit" className="underline hover:text-foreground">
             Publish news? Submit your feed
           </Link>
-          .
+          . We count visits without cookies and don&apos;t store IP addresses.
         </footer>
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
       </body>
     </html>
   );

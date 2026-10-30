@@ -1,5 +1,7 @@
 import {
+  bigserial,
   boolean,
+  date,
   jsonb,
   index,
   integer,
@@ -198,3 +200,29 @@ export const feedSubmissions = pgTable(
 export type Outlet = typeof outlets.$inferSelect;
 export type Article = typeof articles.$inferSelect;
 export type Story = typeof stories.$inferSelect;
+
+/**
+ * Cookieless visit counting (src/lib/analytics.ts). No IP addresses or user ids
+ * are stored; `visitor` is a hash with a salt that is replaced every day.
+ */
+export const analyticsEvents = pgTable(
+  "analytics_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    /** view (a page was shown) or out (a click through to a publisher). */
+    kind: text("kind").notNull(),
+    /** The page path for a view; the publisher's article URL for an out. */
+    target: text("target").notNull(),
+    /** Host of the site that sent the visitor, on the first page of a visit only. */
+    referrer: text("referrer"),
+    visitor: text("visitor").notNull(),
+    device: text("device").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("analytics_events_kind_idx").on(t.kind, t.createdAt)],
+);
+
+export const analyticsSalts = pgTable("analytics_salts", {
+  day: date("day").primaryKey(),
+  salt: text("salt").notNull(),
+});

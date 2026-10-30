@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -91,7 +92,12 @@ async function Queue() {
 export default function SubmissionsPage() {
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Feed submissions</h1>
+      <div className="mb-4 flex items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-bold">Feed submissions</h1>
+        <Link href="/admin/analytics" className="text-sm text-accent hover:underline">
+          Analytics
+        </Link>
+      </div>
       <Suspense fallback={<div className="h-40 animate-pulse rounded-xl border border-line bg-surface" />}>
         <Queue />
       </Suspense>
