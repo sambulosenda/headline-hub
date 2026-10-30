@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNotNull, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
@@ -381,6 +381,7 @@ export function candidatesFromDb(db: Db, now: Date, model: string | undefined): 
       .where(
         and(
           gt(articles.publishedAt, new Date(now.getTime() - CLUSTER_WINDOW_MS)),
+          isNotNull(articles.storyId),
           // Tokens are only [a-z0-9£$%] (titleTokens), so quoting them makes a safe array literal.
           sql`${articles.tokens} && ${`{${words.map((w) => `"${w}"`).join(",")}}`}::text[]`,
         ),
