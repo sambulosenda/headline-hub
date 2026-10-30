@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -26,7 +27,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">{children}</main>
         <footer className="mx-auto w-full max-w-3xl px-4 py-8 text-xs text-muted">
-          Headlines and links come from publishers&apos; own RSS feeds. Every link goes straight to the publisher.
+          Headlines and links come from publishers&apos; own RSS feeds. Every link goes straight to the publisher.{" "}
+          <Link href="/submit" className="underline hover:text-foreground">
+            Publish news? Submit your feed
+          </Link>
+          .
         </footer>
       </body>
     </html>
