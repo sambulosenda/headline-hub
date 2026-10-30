@@ -10,11 +10,12 @@ async function InTheNews() {
   const names = await getTrending(12).catch(() => []);
   if (names.length === 0) return null;
   return (
-    <div className="mb-5 flex items-start gap-2">
+    // One sideways-scrolling row on phones, so the stories start above the fold.
+    <div className="-mx-4 mb-5 flex items-start gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <Link href="/entities" className="shrink-0 pt-0.5 text-xs font-medium text-muted hover:text-accent">
         In the news
       </Link>
-      <NameChips label="Names in the news" names={names} />
+      <NameChips scroll label="Names in the news" names={names} />
     </div>
   );
 }

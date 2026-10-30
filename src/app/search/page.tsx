@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { FeedSkeleton } from "@/components/Feeds";
 import { SearchBox } from "@/components/SearchBox";
-import { StoryCard } from "@/components/StoryCard";
+import { StoryCard, StoryList } from "@/components/StoryCard";
 import { savedByCurrentUser } from "@/lib/saved";
 import { parseSearch, searchHref, searchStories, WITHIN_OPTIONS } from "@/lib/search";
 
@@ -63,7 +63,11 @@ async function Results({ searchParams }: PageProps<"/search">) {
           </Link>
         )
       ) : (
-        results.map((s) => <StoryCard key={s.id} story={s} saved={saved.has(s.id)} />)
+        <StoryList>
+          {results.map((s) => (
+            <StoryCard key={s.id} story={s} saved={saved.has(s.id)} />
+          ))}
+        </StoryList>
       )}
     </div>
   );

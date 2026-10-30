@@ -175,6 +175,7 @@ export async function loadCoverage(
 }
 
 export interface LatestItem extends CoverageItem {
+  storyId: number | null;
   storyOutletCount: number;
 }
 
