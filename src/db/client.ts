@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -31,8 +32,24 @@ function workersDb(): Db {
   return db;
 }
 
+/** A database a standalone Worker (cloudflare/ingest) sets for one invocation; see withDb. */
+const scoped = new AsyncLocalStorage<Db>();
+
+/** Run `fn` with getDb() returning a fresh client on `url`, and close it afterwards. */
+export async function withDb<T>(url: string, fn: (db: Db) => Promise<T>): Promise<T> {
+  const sql = postgres(url, { max: 5, fetch_types: false });
+  const db = drizzle(sql, { schema });
+  try {
+    return await scoped.run(db, () => fn(db));
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+}
+
 /** One pooled connection per process (reused across hot reloads in dev), or one client per request on Workers. */
 export function getDb(): Db {
+  const inScope = scoped.getStore();
+  if (inScope) return inScope;
   if (onWorkers) return workersDb();
   if (globalForDb.db) return globalForDb.db;
   const url = process.env.DATABASE_URL;

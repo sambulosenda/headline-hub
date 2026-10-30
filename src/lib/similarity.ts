@@ -66,6 +66,15 @@ export const STRONG_SIMILARITY = 0.85;
 export const SEMANTIC_THRESHOLD = 0.7;
 /** Weaker embedding match, accepted when backed by shared key terms and words. */
 const SEMANTIC_ASSIST = 0.55;
+
+/** Cosine cut-offs, which depend on the embedding model. The defaults are tuned for all-MiniLM-L6-v2. */
+export interface Thresholds {
+  strong: number;
+  semantic: number;
+  assist: number;
+}
+
+export const MINILM_THRESHOLDS: Thresholds = { strong: STRONG_SIMILARITY, semantic: SEMANTIC_THRESHOLD, assist: SEMANTIC_ASSIST };
 const MIN_SHARED_TOKENS = 3;
 const MIN_OVERLAP = 0.5;
 
@@ -108,15 +117,16 @@ function keysDisagree(a: Headline, b: Headline) {
  * Embeddings carry the match when both have one; shared names, places and
  * numbers guard against look-alike stories. Without embeddings, word overlap.
  */
-export function matchScore(a: Headline, b: Headline, threshold = SEMANTIC_THRESHOLD): number {
+export function matchScore(a: Headline, b: Headline, threshold: number | Thresholds = SEMANTIC_THRESHOLD): number {
   if (a.roundup || b.roundup) return 0;
+  const t = typeof threshold === "number" ? { ...MINILM_THRESHOLDS, semantic: threshold } : threshold;
   const sharedTokens = sharedCount(a.tokens, b.tokens);
   if (a.embedding && b.embedding) {
     const sim = cosine(a.embedding, b.embedding);
-    if (sim >= STRONG_SIMILARITY) return sim;
+    if (sim >= t.strong) return sim;
     if (keysDisagree(a, b)) return 0;
-    if (sim >= threshold) return sim;
-    if (sim >= SEMANTIC_ASSIST && sharedCount(a.keys, b.keys) >= 1 && sharedTokens >= 2) return sim;
+    if (sim >= t.semantic) return sim;
+    if (sim >= t.assist && sharedCount(a.keys, b.keys) >= 1 && sharedTokens >= 2) return sim;
     return 0;
   }
   if (sharedTokens < MIN_SHARED_TOKENS || keysDisagree(a, b)) return 0;
@@ -128,7 +138,7 @@ export function matchScore(a: Headline, b: Headline, threshold = SEMANTIC_THRESH
 export function findStory(
   item: Headline,
   candidates: readonly ClusterCandidate[],
-  threshold = SEMANTIC_THRESHOLD,
+  threshold: number | Thresholds = SEMANTIC_THRESHOLD,
 ): number | null {
   let best: { storyId: number; score: number } | null = null;
   for (const c of candidates) {

@@ -1,5 +1,9 @@
 # Running on Cloudflare
 
+- Website: this page.
+- Feed reader and emails: [ingest/README.md](ingest/README.md).
+- One-off publisher blocking check: [feed-check/README.md](feed-check/README.md).
+
 The website runs as a Cloudflare Worker through [OpenNext](https://opennext.js.org/cloudflare).
 Config lives in `wrangler.jsonc` and `open-next.config.ts` at the repo root.
 Locally, `npm run dev` is unchanged.
@@ -30,4 +34,3 @@ Nothing here has been done yet; the site is not public.
   Workers ([OpenNext #1318](https://github.com/opennextjs/opennextjs-cloudflare/pull/1318)).
   Story pages lost their few-minute cache because of it; turn it back on once that ships.
 - Vetting a submitted feed resolves its host with `node:dns`, which Workers only partly support. Not yet tested on Cloudflare.
-- The ingest and notify workers still need a machine; moving them to Cron Triggers and Queues is the next step.

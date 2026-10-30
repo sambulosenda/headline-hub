@@ -11,7 +11,7 @@ import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { closeDb, getDb } from "../db/client";
 import { articles, outlets, stories } from "../db/schema";
 import { getEmbedder } from "../lib/embeddings";
-import { findStory, headline, SEMANTIC_THRESHOLD, type ClusterCandidate } from "../lib/similarity";
+import { findStory, headline, SEMANTIC_THRESHOLD, type ClusterCandidate, type Thresholds } from "../lib/similarity";
 import { rescoreStories } from "./ingest";
 
 const CLUSTER_WINDOW_MS = 48 * 3_600_000;
@@ -21,7 +21,7 @@ function arg(name: string): string | undefined {
   return process.argv.find((a) => a.startsWith(`--${name}=`))?.split("=")[1];
 }
 
-interface Row {
+export interface Row {
   id: number;
   title: string;
   outletName: string;
@@ -31,7 +31,7 @@ interface Row {
 }
 
 /** Cluster articles in publish order, the same way ingest does. Returns article id → group index. */
-export function cluster(rows: Row[], threshold: number): number[][] {
+export function cluster(rows: Row[], threshold: number | Thresholds): number[][] {
   const groups: number[][] = [];
   const candidates: (ClusterCandidate & { at: number })[] = [];
   for (const row of rows) {

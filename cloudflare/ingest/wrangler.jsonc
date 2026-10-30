@@ -1,0 +1,37 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "headline-hub-ingest",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "triggers": {
+    // Keep these strings in sync with the switch in worker.ts.
+    "crons": ["* * * * *", "*/5 * * * *", "*/15 * * * *"]
+  },
+  "queues": {
+    // Create once: npx wrangler queues create headline-hub-feeds
+    "producers": [{ "binding": "FEEDS", "queue": "headline-hub-feeds" }],
+    "consumers": [
+      {
+        "queue": "headline-hub-feeds",
+        // Ten sites per invocation; Cloudflare runs more consumers in parallel when the queue backs up.
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 2
+      }
+    ]
+  },
+  "ai": { "binding": "AI" },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      // The same Hyperdrive config as the website (../../wrangler.jsonc).
+      "id": "00000000000000000000000000000000",
+      "localConnectionString": "postgres://headlines:headlines@localhost:5432/headlines"
+    }
+  ],
+  // Fetching and parsing a batch of sites takes more than the default 30 s of CPU.
+  "limits": { "cpu_ms": 300000 },
+  "observability": { "enabled": true }
+}

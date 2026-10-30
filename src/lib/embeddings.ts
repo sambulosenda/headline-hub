@@ -1,3 +1,5 @@
+import type { Thresholds } from "./similarity";
+
 /**
  * Headline embeddings for story clustering. Runs a small sentence model
  * (all-MiniLM-L6-v2, ~23 MB, downloaded and cached on first use) locally in
@@ -7,7 +9,8 @@
 // This repo ships the q8 (model_quantized.onnx) weights that `dtype: "q8"` loads.
 export const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
 
-export type Embedder = (texts: string[]) => Promise<number[][]>;
+/** Unit-length embeddings for each text. `thresholds` overrides the MiniLM cut-offs for another model. */
+export type Embedder = ((texts: string[]) => Promise<number[][]>) & { thresholds?: Thresholds };
 
 let embedder: Promise<Embedder | null> | null = null;
 
