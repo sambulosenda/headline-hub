@@ -226,3 +226,22 @@ export const analyticsSalts = pgTable("analytics_salts", {
   day: date("day").primaryKey(),
   salt: text("salt").notNull(),
 });
+
+/**
+ * Names in the news (src/lib/names.ts), refreshed on every ingest pass. Rows
+ * are kept for a while after a name drops out so its page keeps working.
+ */
+export const trendingNames = pgTable(
+  "trending_names",
+  {
+    slug: text("slug").primaryKey(),
+    name: text("name").notNull(),
+    /** "auto" for names spotted in headlines, otherwise the listed entity's kind. */
+    kind: text("kind").notNull(),
+    outlets: integer("outlets").notNull(),
+    articles: integer("articles").notNull(),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("trending_names_seen_idx").on(t.lastSeenAt)],
+);

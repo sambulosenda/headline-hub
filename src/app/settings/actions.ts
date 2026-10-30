@@ -29,5 +29,6 @@ export async function removeKeywordMute(keyword: string) {
 }
 
 export async function clearMutes() {
-  await save(NO_MUTES);
+  const { follows } = await getMutes();
+  await save({ ...NO_MUTES, follows });
 }

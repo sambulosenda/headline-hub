@@ -21,6 +21,11 @@ export function SiteHeader() {
             <Link href="/developing" className="hidden hover:text-accent sm:inline">
               Developing
             </Link>
+            <Link href="/following" aria-label="Following" title="Following" className="hidden hover:text-accent sm:inline">
+              <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+                <path d="M10 3l2.1 4.3 4.7.7-3.4 3.3.8 4.7-4.2-2.2-4.2 2.2.8-4.7L3.2 8l4.7-.7z" strokeLinejoin="round" />
+              </svg>
+            </Link>
             <Link href="/saved" aria-label="Saved stories" title="Saved stories" className="hover:text-accent">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                 <path d="M5.5 3.5h9v13l-4.5-3-4.5 3z" strokeLinejoin="round" />
@@ -44,6 +49,12 @@ export function SiteHeader() {
           >
             Developing
           </Link>
+          <Link
+            href="/following"
+            className="shrink-0 rounded-md px-2.5 py-1 text-muted hover:bg-surface hover:text-foreground sm:hidden"
+          >
+            Following
+          </Link>
           {TOPICS.map((t) => (
             <Link
               key={t.slug}
@@ -53,6 +64,12 @@ export function SiteHeader() {
               {t.name}
             </Link>
           ))}
+          <Link
+            href="/entities"
+            className="shrink-0 rounded-md px-2.5 py-1 text-muted hover:bg-surface hover:text-foreground"
+          >
+            People &amp; clubs
+          </Link>
         </nav>
       </div>
     </header>

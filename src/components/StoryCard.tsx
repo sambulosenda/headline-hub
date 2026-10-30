@@ -6,6 +6,8 @@ import { storyPath } from "@/lib/slug";
 import type { StoryWithCoverage } from "@/lib/queries";
 import { findTopic } from "@/config/topics";
 import { toggleOutletMute, toggleTopicMute } from "@/app/settings/actions";
+import { entitiesIn } from "@/lib/names";
+import { NameChips } from "./NameChips";
 import { SaveButton } from "./SaveButton";
 
 export function StoryCard({
@@ -43,6 +45,7 @@ export function StoryCard({
             {lead.outletName}
             {lead.summary && <span className="hidden sm:inline"> · {lead.summary}</span>}
           </p>
+          <NameChips className="mt-2" label="Names in this story" names={entitiesIn(story.title)} />
         </div>
         {lead.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- remote publisher images, sized by the feed

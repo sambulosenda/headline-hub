@@ -1,7 +1,7 @@
 import { and, arrayContains, desc, eq, gt, gte, inArray, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { articles, outlets, stories } from "@/db/schema";
-import { likePattern, type Mutes } from "@/lib/mutes";
+import { wordPattern, type Mutes } from "@/lib/mutes";
 
 export const DEVELOPING_FRESH_HOURS = 3;
 
@@ -16,6 +16,19 @@ export interface FeedFilters {
   developing?: boolean;
   /** Sources, topics and keywords the reader has hidden. */
   mutes?: Mutes;
+  /** Only stories whose headlines or summaries contain one of these phrases (an entity's terms). */
+  mentions?: string[];
+}
+
+/** Same expression as the full-text index on articles (src/db/schema.ts), so the index is used. */
+const articleText = sql`to_tsvector('english', ${articles.title} || ' ' || ${articles.summary})`;
+
+/** Article ids whose text contains any of the phrases. */
+function mentionsAny(phrases: string[]): SQL {
+  return sql.join(
+    phrases.map((p) => sql`phraseto_tsquery('english', ${p})`),
+    sql` || `,
+  );
 }
 
 /** Postgres text[] literal; only ever built from config-validated ids. */
@@ -23,10 +36,10 @@ function textArray(values: string[]) {
   return `{${values.join(",")}}`;
 }
 
-/** Keyword mutes as "title matches any of these" over a given title column. */
+/** Keyword mutes as "title contains any of these words" over a given title column. */
 function titleMatchesAny(title: SQL | typeof articles.title, keywords: string[]): SQL {
   return sql.join(
-    keywords.map((k) => sql`${title} ilike ${likePattern(k)}`),
+    keywords.map((k) => sql`${title} ~* ${wordPattern(k)}`),
     sql` or `,
   );
 }
@@ -97,6 +110,11 @@ export async function getTopStories(filters: FeedFilters, limit = 30): Promise<S
   const conditions = [gt(stories.lastSeenAt, since)];
   if (filters.topic) conditions.push(arrayContains(stories.topics, [filters.topic]));
   if (filters.country) conditions.push(arrayContains(stories.countries, [filters.country]));
+  if (filters.mentions?.length) {
+    conditions.push(
+      sql`${stories.id} in (select ${articles.storyId} from ${articles} where ${articleText} @@ (${mentionsAny(filters.mentions)}))`,
+    );
+  }
   if (filters.developing) {
     // Two or more outlets joined in the last hour, or a fresh story already
     // picked up by three outlets within three hours of first appearing.
@@ -186,6 +204,7 @@ function scopeConditions(filters: ScopeFilters): SQL[] {
       and cs.countries @> ${`{${filters.country}}`}::text[])`);
   }
   if (filters.region) conditions.push(eq(outlets.region, filters.region));
+  if (filters.mentions?.length) conditions.push(sql`${articleText} @@ (${mentionsAny(filters.mentions)})`);
   const mutes = filters.mutes;
   if (mutes) {
     if (mutes.outlets.length > 0) conditions.push(notInArray(articles.outletId, mutes.outlets));

@@ -1,4 +1,5 @@
 import { loadPreferences, userForSession } from "@/lib/auth";
+import { resolveEntities, resolveEntity } from "@/lib/entities";
 import { MUTES_COOKIE, parseMutes } from "@/lib/mutes";
 import { countUpdates } from "@/lib/queries";
 import { parseScope, sseEvent } from "@/lib/sse";
@@ -15,12 +16,17 @@ const MAX_STREAM_MS = 4 * 60_000;
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const { filters: scope, since } = parseScope(url.searchParams);
+  const { filters: scope, since, entity, following } = parseScope(url.searchParams);
   const storyLevel = url.searchParams.get("stories") === "1";
   const cookieHeader = request.headers.get("cookie");
   const user = await userForSession(readCookie(cookieHeader, SESSION_COOKIE));
   const mutes = user ? await loadPreferences(user.id) : parseMutes(readCookie(cookieHeader, MUTES_COOKIE));
-  const filters = { ...scope, mutes };
+  let mentions: string[] | undefined;
+  if (entity) mentions = (await resolveEntity(entity))?.terms ?? [];
+  else if (following) mentions = (await resolveEntities(mutes.follows)).flatMap((e) => e.terms);
+  // Nothing to match means nothing to watch, not "watch everything".
+  if (mentions && mentions.length === 0) return new Response(null, { status: 204 });
+  const filters = { ...scope, mutes, mentions };
   const encoder = new TextEncoder();
   const { signal } = request;
 
