@@ -44,17 +44,18 @@ describe("readCookie", () => {
 
 describe("mergeMutes", () => {
   it("joins a browser's mutes onto an account's without duplicates", () => {
-    const account = { outlets: ["bbc"], topics: ["football"], keywords: ["love island"] };
-    const browser = { outlets: ["bbc", "mirror"], topics: [], keywords: ["Love Island", "strictly"] };
+    const account = { outlets: ["bbc"], topics: ["football"], keywords: ["love island"], follows: ["arsenal"] };
+    const browser = { outlets: ["bbc", "mirror"], topics: [], keywords: ["Love Island", "strictly"], follows: ["chelsea", "arsenal"] };
     expect(mergeMutes(account, browser)).toEqual({
       outlets: ["bbc", "mirror"],
       topics: ["football"],
       keywords: ["love island", "strictly"],
+      follows: ["arsenal", "chelsea"],
     });
   });
 
   it("is a no-op with nothing to add", () => {
-    const account = { outlets: ["bbc"], topics: [], keywords: [] };
+    const account = { outlets: ["bbc"], topics: [], keywords: [], follows: [] };
     expect(mergeMutes(account, NO_MUTES)).toEqual(account);
   });
 });

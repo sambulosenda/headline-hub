@@ -17,6 +17,8 @@ export function LiveUpdates({
   topic,
   region,
   country,
+  entity,
+  following = false,
   stories = false,
   mutesKey,
 }: {
@@ -24,6 +26,8 @@ export function LiveUpdates({
   topic?: string;
   region?: string;
   country?: string;
+  entity?: string;
+  following?: boolean;
   /** Count whole stories as the story feeds show them, rather than single headlines. */
   stories?: boolean;
   /** Changes when the reader's mutes do, so the stream restarts with the new ones. */
@@ -35,6 +39,8 @@ export function LiveUpdates({
   if (topic) params.set("topic", topic);
   if (region) params.set("region", region);
   if (country) params.set("country", country);
+  if (entity) params.set("entity", entity);
+  if (following) params.set("following", "1");
   if (stories) params.set("stories", "1");
   if (mutesKey) params.set("m", mutesKey);
   const query = params.toString();

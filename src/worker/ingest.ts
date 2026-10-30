@@ -3,6 +3,7 @@ import { OUTLETS } from "../config/outlets";
 import { closeDb, getDb } from "../db/client";
 import { articles, feeds, outlets, stories } from "../db/schema";
 import { tagCountries } from "../lib/countries";
+import { refreshTrendingNames } from "../lib/entities";
 import { getEmbedder, type Embedder } from "../lib/embeddings";
 import { parseFeed, type FeedItem } from "../lib/feeds";
 import { storyScore } from "../lib/ranking";
@@ -309,6 +310,9 @@ async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>)
   );
 }
 
+const NAMES_REFRESH_MS = 10 * 60_000;
+let lastNamesRefresh = 0;
+
 export async function runOnce(db: Db) {
   const now = new Date();
   await syncConfig(db);
@@ -356,8 +360,14 @@ export async function runOnce(db: Db) {
   });
 
   const rescored = await rescoreStories(db);
+  // Recounting names reads a day of headlines, so only when something changed or it's getting stale.
+  let names = "skipped";
+  if (added > 0 || now.getTime() - lastNamesRefresh > NAMES_REFRESH_MS) {
+    names = String(await refreshTrendingNames(db, now));
+    lastNamesRefresh = now.getTime();
+  }
   console.log(
-    `[ingest] feeds=${due.length} new_articles=${added} stories_rescored=${rescored} embeddings=${embed ? "on" : "off"}`,
+    `[ingest] feeds=${due.length} new_articles=${added} stories_rescored=${rescored} names=${names} embeddings=${embed ? "on" : "off"}`,
   );
 }
 
