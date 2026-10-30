@@ -25,10 +25,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+      {/* Feed pages mark themselves data-wide, and the header, page and footer widen to fit the side column. */}
+      <body className="group/body flex min-h-full flex-col">
         <SiteHeader />
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">{children}</main>
-        <footer className="mx-auto w-full max-w-3xl px-4 py-8 text-xs text-muted">
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 lg:group-has-[[data-wide]]/body:max-w-6xl">{children}</main>
+        <footer className="mx-auto w-full max-w-3xl px-4 py-8 text-xs text-muted lg:group-has-[[data-wide]]/body:max-w-6xl">
           Headlines and links come from publishers&apos; own RSS feeds. Every link goes straight to the publisher.{" "}
           <Link href="/submit" className="underline hover:text-foreground">
             Publish news? Submit your feed

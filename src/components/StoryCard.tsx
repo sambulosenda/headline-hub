@@ -10,6 +10,19 @@ import { entitiesIn } from "@/lib/names";
 import { NameChips } from "./NameChips";
 import { SaveButton } from "./SaveButton";
 
+/** How many outlet names a card spells out before "+N". */
+const NAMED_OUTLETS = 3;
+
+/** Distinct outlet names in coverage order (best outlet first). */
+export function outletNames(coverage: { outletName: string }[]): string[] {
+  return [...new Set(coverage.map((c) => c.outletName))];
+}
+
+/** The bordered, divided list that story cards sit in. */
+export function StoryList({ children }: { children: React.ReactNode }) {
+  return <div className="divide-y divide-line rounded-xl border border-line bg-surface">{children}</div>;
+}
+
 export function StoryCard({
   story,
   mutedTopics = [],
@@ -19,101 +32,101 @@ export function StoryCard({
   mutedTopics?: string[];
   saved?: boolean;
 }) {
-  const [lead, ...rest] = story.coverage;
+  const [lead] = story.coverage;
   if (!lead) return null;
   const developing = story.recentOutlets >= 2;
+  const names = outletNames(story.coverage);
+  const shown = names.slice(0, NAMED_OUTLETS);
+  const more = Math.max(story.outletCount, names.length) - shown.length;
+  const path = storyPath(story.id, story.title);
 
   return (
-    <article className="rounded-xl border border-line bg-surface p-4 sm:p-5">
-      <div className="flex gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span className="rounded-full bg-accent-soft px-2 py-0.5 font-medium text-accent">
-              {story.outletCount} {story.outletCount === 1 ? "source" : "sources"}
-            </span>
-            {developing && (
-              <span className="rounded-full bg-warn-soft px-2 py-0.5 font-medium text-warn">Developing</span>
-            )}
-            <span>{timeAgo(story.lastSeenAt)}</span>
-          </div>
-          <h2 className="text-lg font-semibold leading-snug text-balance">
-            <a href={outboundUrl(lead.url)} data-outbound="1" className="hover:underline" target="_blank" rel="noopener">
-              {story.title}
-            </a>
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            {lead.outletName}
-            {lead.summary && <span className="hidden sm:inline"> · {lead.summary}</span>}
-          </p>
-          <NameChips className="mt-2" label="Names in this story" names={entitiesIn(story.title)} />
+    <article className="px-4 py-3">
+      <h2 className="font-semibold leading-snug text-balance sm:text-[1.0625rem]">
+        <a href={outboundUrl(lead.url)} data-outbound="1" className="hover:underline" target="_blank" rel="noopener">
+          {story.title}
+        </a>
+      </h2>
+      {/* Actions share the outlet line so the headline gets the card's full width on phones. */}
+      <div className="flex items-center gap-2">
+        <p className="min-w-0 flex-1 text-sm text-muted">
+          {developing && <span className="mr-1.5 font-medium text-warn">Developing ·</span>}
+          {/* The outlet list is the way into full coverage, so the grouping is visible on every card. */}
+          <Link href={path} className="hover:text-accent hover:underline" title="See every outlet's version">
+            {shown.join(", ")}
+            {more > 0 && <span className="font-medium text-accent"> +{more}</span>}
+          </Link>
+          <span> · {timeAgo(story.lastSeenAt)}</span>
+        </p>
+        <div className="-my-1 -mr-2 flex shrink-0 items-center">
+          <SaveButton storyId={story.id} saved={saved} iconOnly />
+          <StoryMenu story={story} lead={lead} mutedTopics={mutedTopics} path={path} />
         </div>
-        {lead.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element -- remote publisher images, sized by the feed
-          <img
-            src={lead.imageUrl}
-            alt=""
-            loading="lazy"
-            className="hidden h-20 w-28 shrink-0 rounded-lg object-cover sm:block"
-          />
-        )}
       </div>
+      {lead.summary && <p className="hidden text-sm text-muted sm:line-clamp-1">{lead.summary}</p>}
+      <div className="hidden sm:block">
+        <NameChips className="mt-2" label="Names in this story" names={entitiesIn(story.title)} />
+      </div>
+    </article>
+  );
+}
 
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-        <Link href={storyPath(story.id, story.title)} className="text-accent hover:underline">
+/** The ⋯ menu: everything a reader needs now and then, kept off the card itself. */
+function StoryMenu({
+  story,
+  lead,
+  mutedTopics,
+  path,
+}: {
+  story: StoryWithCoverage;
+  lead: StoryWithCoverage["coverage"][number];
+  mutedTopics: string[];
+  path: string;
+}) {
+  const item = "block w-full rounded-md px-3 py-2 text-left hover:bg-background";
+  return (
+    <details className="group relative">
+      <summary
+        className="flex size-9 cursor-pointer list-none items-center justify-center rounded-full text-muted hover:bg-background hover:text-foreground [&::-webkit-details-marker]:hidden"
+        aria-label="More options"
+        title="More options"
+      >
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor" aria-hidden>
+          <circle cx="4.5" cy="10" r="1.5" />
+          <circle cx="10" cy="10" r="1.5" />
+          <circle cx="15.5" cy="10" r="1.5" />
+        </svg>
+      </summary>
+      <div className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-line bg-surface p-1.5 text-sm shadow-lg">
+        <Link href={path} className={item}>
           Full coverage &amp; share
         </Link>
-        <SaveButton storyId={story.id} saved={saved} />
-        {rest.length > 0 && (
-          <details className="group">
-            <summary className="cursor-pointer text-accent">
-              More coverage ({rest.length})
-            </summary>
-            <ul className="mt-2 space-y-2 border-l border-line pl-3">
-              {rest.map((a) => (
-                <li key={a.id}>
-                  <a href={outboundUrl(a.url)} data-outbound="1" className="hover:underline" target="_blank" rel="noopener">
-                    {a.title}
-                  </a>
-                  <span className="text-muted">
-                    {" "}
-                    · {a.outletName} · {timeAgo(a.publishedAt)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-        <details>
-          <summary className="cursor-pointer text-muted">Hide…</summary>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <form action={toggleOutletMute.bind(null, lead.outletId)}>
-              <button type="submit" className="rounded-full border border-line px-3 py-1 hover:border-accent">
-                Mute {lead.outletName}
-              </button>
-            </form>
-            {story.topics.map((slug) => {
-              const topic = findTopic(slug);
-              return (
-                topic && (
-                  <form key={slug} action={toggleTopicMute.bind(null, slug)}>
-                    <button type="submit" className="rounded-full border border-line px-3 py-1 hover:border-accent">
-                      {mutedTopics.includes(slug) ? "Unmute" : "Mute"} {topic.name}
-                    </button>
-                  </form>
-                )
-              );
-            })}
-          </div>
-        </details>
-        <details>
-          <summary className="cursor-pointer text-muted">Why this is here</summary>
-          <ul className="mt-2 list-disc pl-5 text-muted">
+        <form action={toggleOutletMute.bind(null, lead.outletId)}>
+          <button type="submit" className={item}>
+            Mute {lead.outletName}
+          </button>
+        </form>
+        {story.topics.map((slug) => {
+          const topic = findTopic(slug);
+          return (
+            topic && (
+              <form key={slug} action={toggleTopicMute.bind(null, slug)}>
+                <button type="submit" className={item}>
+                  {mutedTopics.includes(slug) ? "Unmute" : "Mute"} {topic.name}
+                </button>
+              </form>
+            )
+          );
+        })}
+        <div className="mt-1 border-t border-line px-3 pb-1 pt-2 text-muted">
+          <p className="font-medium text-foreground">Why this is here</p>
+          <ul className="mt-1 list-disc pl-4">
             {explainScore(story).map((reason) => (
               <li key={reason}>{reason}</li>
             ))}
           </ul>
-        </details>
+        </div>
       </div>
-    </article>
+    </details>
   );
 }

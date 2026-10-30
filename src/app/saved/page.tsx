@@ -3,7 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { FeedSkeleton } from "@/components/Feeds";
-import { StoryCard } from "@/components/StoryCard";
+import { StoryCard, StoryList } from "@/components/StoryCard";
 import { getCurrentUser } from "@/lib/auth";
 import { getSavedStories } from "@/lib/saved";
 
@@ -43,11 +43,11 @@ async function SavedList() {
     return <Notice title="Nothing saved yet">Tap Save on any story and it&apos;ll wait for you here.</Notice>;
   }
   return (
-    <div className="space-y-4">
+    <StoryList>
       {stories.map((s) => (
         <StoryCard key={s.id} story={s} saved />
       ))}
-    </div>
+    </StoryList>
   );
 }
 
