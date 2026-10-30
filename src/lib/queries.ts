@@ -297,3 +297,35 @@ export async function getNewsrooms(country: string, hours = 24): Promise<Newsroo
     .groupBy(outlets.id)
     .orderBy(desc(sql`count(${articles.id})`), desc(outlets.quality));
 }
+
+export interface MentionStats {
+  /** Headlines mentioning the name per day, oldest first, one entry for every day including quiet ones. */
+  days: { day: string; count: number }[];
+  /** Outlets that mentioned the name most over the period. */
+  outlets: { id: string; name: string; count: number }[];
+}
+
+/** How often a name has been in the headlines lately, and who has been writing about it. */
+export async function getMentionStats(phrases: string[], days = 7, topOutlets = 5): Promise<MentionStats> {
+  const db = getDb();
+  const since = new Date(Date.now() - days * 86_400_000);
+  const match = and(gt(articles.publishedAt, since), sql`${articleText} @@ (${mentionsAny(phrases)})`);
+  const day = sql<string>`to_char(date_trunc('day', ${articles.publishedAt} at time zone 'UTC'), 'YYYY-MM-DD')`;
+  const [perDay, perOutlet] = await Promise.all([
+    db.select({ day, count: sql<number>`count(*)::int` }).from(articles).where(match).groupBy(day),
+    db
+      .select({ id: outlets.id, name: outlets.name, count: sql<number>`count(*)::int` })
+      .from(articles)
+      .innerJoin(outlets, eq(outlets.id, articles.outletId))
+      .where(match)
+      .groupBy(outlets.id)
+      .orderBy(desc(sql`count(*)`), desc(outlets.quality))
+      .limit(topOutlets),
+  ]);
+  const counts = new Map(perDay.map((d) => [d.day, d.count]));
+  const filled = Array.from({ length: days }, (_, i) => {
+    const d = new Date(Date.now() - (days - 1 - i) * 86_400_000).toISOString().slice(0, 10);
+    return { day: d, count: counts.get(d) ?? 0 };
+  });
+  return { days: filled, outlets: perOutlet };
+}

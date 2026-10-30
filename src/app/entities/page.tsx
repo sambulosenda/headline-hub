@@ -23,23 +23,23 @@ export default function EntitiesPage() {
   const kinds = Object.keys(KIND_LABELS) as EntityKind[];
   return (
     <>
-      <h1 className="text-2xl font-bold">People, clubs and companies</h1>
+      <h1 className="text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">People, clubs and companies</h1>
       <p className="mt-1 text-sm text-muted">
         Every name has its own page. Follow the ones you care about to collect them on your Following page.
       </p>
       <section className="mt-6">
-        <h2 className="mb-1 font-semibold">In the news now</h2>
-        <p className="mb-3 text-xs text-muted">
+        <h2 className="mb-1 border-b-2 border-foreground pb-2.5 text-[0.9375rem] font-bold">In the news now</h2>
+        <p className="mb-3 text-[0.8125rem] text-muted">
           Names the most outlets are using in today&apos;s headlines, with the number of outlets. New names appear here
           automatically once three or more outlets use them.
         </p>
-        <Suspense fallback={<div className="h-16 animate-pulse rounded-xl border border-line bg-surface" />}>
+        <Suspense fallback={<div className="h-16 animate-pulse rounded-md bg-fill" />}>
           <Trending />
         </Suspense>
       </section>
       {kinds.map((kind) => (
         <section key={kind} className="mt-6">
-          <h2 className="mb-3 font-semibold">{KIND_LABELS[kind]}</h2>
+          <h2 className="mb-3 border-b-2 border-foreground pb-2.5 text-[0.9375rem] font-bold">{KIND_LABELS[kind]}</h2>
           <NameChips label={KIND_LABELS[kind]} names={ENTITIES.filter((e) => e.kind === kind)} />
         </section>
       ))}

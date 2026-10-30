@@ -16,7 +16,7 @@ async function FollowingFeed({ searchParams }: PageProps<"/following">) {
         <p className="font-medium">You aren&apos;t following anyone yet</p>
         <p className="mt-1 text-sm text-muted">
           Open a name on any story, or{" "}
-          <Link href="/entities" className="text-accent hover:underline">
+          <Link href="/entities" className="underline underline-offset-4">
             browse people, clubs and companies
           </Link>
           , and tap Follow.
@@ -26,7 +26,12 @@ async function FollowingFeed({ searchParams }: PageProps<"/following">) {
   }
   return (
     <>
-      <NameChips className="mb-4" label="Names you follow" names={followed} />
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-4 border-b border-line pb-3">
+        <NameChips label="Names you follow" names={followed} />
+        <Link href="/entities" className="py-1 text-sm text-muted hover:text-foreground">
+          Follow more
+        </Link>
+      </div>
       <TopStories
         pathname="/following"
         searchParams={searchParams}
@@ -41,7 +46,7 @@ async function FollowingFeed({ searchParams }: PageProps<"/following">) {
 export default function FollowingPage(props: PageProps<"/following">) {
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Following</h1>
+      <h1 className="mb-3 text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">Following</h1>
       <Suspense fallback={<FeedSkeleton />}>
         <FollowingFeed {...props} />
       </Suspense>
